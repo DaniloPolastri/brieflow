@@ -139,6 +139,25 @@ Todo plano de implementação DEVE ter um checklist `[ ]` / `[x]` na seção Tas
 - **Nunca** deixar para marcar tudo no final. Marcar task por task, simultaneamente com a codificação.
 - Isso garante que se a sessão for interrompida, o plano reflete exatamente onde parou.
 
+### Paralelismo nas Tasks do Plano
+
+Todo plano DEVE identificar quais tasks podem ser executadas em paralelo. Regras:
+
+- Na seção Task Summary, agrupar tasks paralelizáveis com marcação explícita:
+  ```
+  - [ ] Task 1: Setup do projeto (sequencial — base para tudo)
+  - [ ] Task 2: Entity User + Repository ⚡ PARALLEL GROUP A
+  - [ ] Task 3: Entity Workspace + Repository ⚡ PARALLEL GROUP A
+  - [ ] Task 4: Auth Service (sequencial — depende de Task 2)
+  - [ ] Task 5: User Controller ⚡ PARALLEL GROUP B
+  - [ ] Task 6: Workspace Controller ⚡ PARALLEL GROUP B
+  ```
+- Tasks no mesmo `PARALLEL GROUP` não têm dependência entre si e DEVEM ser executadas em paralelo usando a skill `dispatching-parallel-agents` ou lançando múltiplos Agent tool calls simultaneamente.
+- Tasks sem marcação `⚡ PARALLEL GROUP` são sequenciais e devem ser executadas na ordem.
+- **Na escrita do plano** (`writing-plans`): o autor DEVE analisar o grafo de dependências das tasks e marcar os grupos paralelos. Se todas as tasks forem sequenciais, declarar explicitamente: "Nenhuma task paralelizável — todas têm dependência sequencial."
+- **Na execução do plano** (`executing-plans`): SEMPRE despachar tasks paralelas ao mesmo tempo via agentes. Nunca executar sequencialmente tasks que estão marcadas como paralelas.
+- Cada agente paralelo trabalha em worktree isolado quando há risco de conflito de arquivos. Caso contrário, pode trabalhar no mesmo workspace se os arquivos são independentes.
+
 ## Git Rules
 
 - **No Claude signatures.** Never add `Co-Authored-By: Claude` or any AI attribution to commits or PRs.
