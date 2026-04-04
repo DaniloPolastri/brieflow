@@ -22,6 +22,9 @@
 | CI/CD | Não agora |
 | SSR | Não |
 | Abordagem | Híbrida — CLI scaffold + estrutura manual |
+| Metodologia | TDD (Red → Green → Refactor) |
+| Testes Backend | JUnit 5 + Mockito + Testcontainers (PostgreSQL) |
+| Testes Frontend | Vitest com funções globais, *.spec.ts ao lado do fonte |
 
 ---
 
@@ -105,7 +108,23 @@ src/main/resources/
 ├── application-prod.yml
 ├── db/migration/
 └── templates/email/
+
+src/test/java/com/briefflow/
+├── unit/                        # Testes unitários (mocks, rápidos)
+│   ├── service/
+│   ├── mapper/
+│   └── security/
+├── integration/                 # Testes de integração (Testcontainers + PostgreSQL)
+│   ├── repository/
+│   └── controller/
+└── e2e/                         # Testes end-to-end de fluxos completos
 ```
+
+### Dependências de Teste
+
+- JUnit 5 (incluso no spring-boot-starter-test)
+- Mockito (incluso no spring-boot-starter-test)
+- Testcontainers (PostgreSQL) para testes de integração
 
 ### O que o setup cria (funcional)
 
@@ -114,6 +133,7 @@ src/main/resources/
 - `CorsConfig.java` — origens permitidas por profile
 - `GlobalExceptionHandler.java` — handler com ResourceNotFoundException, BusinessException
 - `application.yml` / `application-dev.yml` — conexão PostgreSQL, configs JWT
+- Estrutura de pastas de teste (unit/, integration/, e2e/)
 - Pastas vazias com `.gitkeep`
 
 ---
@@ -175,6 +195,12 @@ src/
 │   └── environment.prod.ts
 └── assets/
 ```
+
+### Convenção de Testes
+
+- Arquivo de teste ao lado do fonte: `*.spec.ts` (ex: `auth.service.spec.ts`)
+- Vitest com funções globais (sem imports de `describe`, `it`, `expect`)
+- `TestBed` para componentes, `provideHttpClientTesting()` para mock de HTTP
 
 ### O que o setup cria (funcional)
 

@@ -143,12 +143,12 @@ src/
 
 ## Superpowers Workflow
 
-O fluxo completo de desenvolvimento usando as skills superpowers segue esta ordem obrigatória:
+### Fluxo de Implementação (features)
 
 ```
 1. brainstorming          → Explorar ideia, definir design, salvar em docs/spec/
-2. writing-plans          → Criar plano de implementação, salvar em docs/plan/
-3. executing-plans        → Criar branch feature/*, executar task por task
+2. writing-plans          → Criar plano de implementação (TDD), salvar em docs/plan/
+3. executing-plans        → Criar branch feature/*, executar task por task (test-first)
 4. requesting-code-review → Ao final da execução, solicitar code review
 5. receiving-code-review  → Processar feedback do review com rigor técnico
 6. finishing-a-development-branch → Decidir merge, PR ou cleanup
@@ -160,6 +160,90 @@ O fluxo completo de desenvolvimento usando as skills superpowers segue esta orde
 - Após receber o review, usar `receiving-code-review` para processar o feedback.
 - Finalizar com `finishing-a-development-branch` para decidir como integrar o trabalho.
 - Nunca pular etapas. Cada implementação passa pelo fluxo completo.
+
+### Fluxo de Correção de Bugs
+
+- **Bug simples** (causa óbvia, fix direto): corrigir diretamente, sem skill especial.
+- **Bug complexo** (precisa investigação, causa não óbvia, múltiplos arquivos):
+  1. `systematic-debugging` → Investigar root cause com método estruturado (reproduzir → isolar → diagnosticar → corrigir)
+  2. `verification-before-completion` → Verificar que o fix realmente resolve o problema, rodar testes, confirmar que nada quebrou
+- Criar branch `fix/<nome>` para bugs que precisam de debugging complexo.
+
+## Test-Driven Development (TDD)
+
+Este projeto segue TDD como padrão. Toda implementação de feature ou bugfix segue o ciclo:
+
+```
+Red → Green → Refactor
+1. Escrever o teste que falha
+2. Implementar o mínimo para o teste passar
+3. Refatorar mantendo os testes verdes
+```
+
+**Usar a skill `test-driven-development` em toda implementação de código.**
+
+### Backend — Estrutura de Testes (JUnit 5 + Mockito + Testcontainers)
+
+```
+backend/src/test/java/com/briefflow/
+├── unit/                        # Testes unitários (mocks, rápidos)
+│   ├── service/                 # Testa lógica de negócio isolada
+│   │   └── JobServiceImplTest.java
+│   ├── mapper/                  # Testa mapeamentos Entity ↔ DTO
+│   │   └── JobMapperTest.java
+│   └── security/                # Testa JWT, filters
+│       └── JwtServiceTest.java
+├── integration/                 # Testes de integração (banco real via Testcontainers)
+│   ├── repository/              # Testa queries JPA com PostgreSQL real
+│   │   └── JobRepositoryTest.java
+│   └── controller/              # Testa endpoints REST completos
+│       └── JobControllerTest.java
+└── e2e/                         # Testes end-to-end de fluxos completos
+    └── JobLifecycleTest.java
+```
+
+**Convenções backend:**
+- Testes unitários: `@ExtendWith(MockitoExtension.class)`, mocks para dependências
+- Testes de integração: `@SpringBootTest` + `@Testcontainers` com PostgreSQL real
+- Testes de controller: `@WebMvcTest` + `MockMvc` para unitário, `@SpringBootTest` + `TestRestTemplate` para integração
+- Nomenclatura: `should_expectedBehavior_when_condition()` (ex: `should_createJob_when_validRequest()`)
+- Cada service DEVE ter testes unitários. Cada controller DEVE ter testes de integração.
+
+### Frontend — Estrutura de Testes (Vitest)
+
+```
+frontend/src/
+├── core/
+│   └── services/
+│       ├── auth.service.ts
+│       └── auth.service.spec.ts       # Teste junto do arquivo
+├── shared/
+│   └── components/
+│       └── status-badge/
+│           ├── status-badge.component.ts
+│           └── status-badge.component.spec.ts
+├── features/
+│   └── jobs/
+│       ├── services/
+│       │   ├── job-api.service.ts
+│       │   └── job-api.service.spec.ts
+│       ├── pages/
+│       │   └── job-create/
+│       │       ├── job-create.component.ts
+│       │       └── job-create.component.spec.ts
+│       └── components/
+│           └── briefing-form/
+│               ├── briefing-form.component.ts
+│               └── briefing-form.component.spec.ts
+```
+
+**Convenções frontend:**
+- Arquivo de teste ao lado do arquivo fonte: `*.spec.ts`
+- Vitest com funções globais (`describe`, `it`, `expect` — sem imports)
+- Usar `TestBed` para testes de componentes Angular
+- Mock de HttpClient com `provideHttpClientTesting()`
+- Nomenclatura: `it('should do X when Y')` (ex: `it('should display error when login fails')`)
+- Cada service DEVE ter testes. Componentes com lógica DEVEM ter testes.
 
 ## MVP Scope Boundaries
 

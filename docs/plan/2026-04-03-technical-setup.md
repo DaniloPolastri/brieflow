@@ -185,12 +185,50 @@ Add to `<build><plugins>` inside `maven-compiler-plugin` configuration:
 
 Note: Lombok + MapStruct require `lombok-mapstruct-binding` to work together. The order in `annotationProcessorPaths` matters — MapStruct processor must be listed.
 
-**Step 3: Verify it compiles**
+**Step 3: Add Testcontainers to pom.xml**
+
+Add to `<dependencies>`:
+
+```xml
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>testcontainers</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+Add to `<dependencyManagement>`:
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-bom</artifactId>
+            <version>1.20.4</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+**Step 4: Verify it compiles**
 
 Run: `cd backend && ./mvnw compile`
 Expected: BUILD SUCCESS
 
-**Step 4: Commit**
+**Step 5: Commit**
 
 ```bash
 git add backend/
@@ -231,6 +269,17 @@ exception/.gitkeep
 security/.gitkeep
 validation/.gitkeep
 util/.gitkeep
+```
+
+Create test packages under `backend/src/test/java/com/briefflow/`:
+
+```
+unit/service/.gitkeep
+unit/mapper/.gitkeep
+unit/security/.gitkeep
+integration/repository/.gitkeep
+integration/controller/.gitkeep
+e2e/.gitkeep
 ```
 
 Create resource directories:
@@ -1267,8 +1316,8 @@ If no changes needed, no commit.
 |------|-------------|
 | 1 | Initialize Git Repo + .gitignore |
 | 2 | Docker Compose Dev (PostgreSQL) |
-| 3 | Scaffold Spring Boot Backend |
-| 4 | Backend Folder Structure + Config |
+| 3 | Scaffold Spring Boot Backend (+ Testcontainers) |
+| 4 | Backend Folder Structure + Config + Test Structure |
 | 5 | Backend Exception Handling Skeleton |
 | 6 | Backend Security Skeleton |
 | 7 | Verify Backend Starts |
