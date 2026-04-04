@@ -136,6 +136,30 @@ src/
 - **No Claude signatures.** Never add `Co-Authored-By: Claude` or any AI attribution to commits or PRs.
 - **Human-style commits.** Write commit messages as a human developer would — concise, conventional commits (feat:, fix:, chore:, refactor:, docs:, test:).
 - **No AI mentions in PRs.** Do not add "Generated with Claude Code" or similar footers to PR descriptions.
+- **Branch naming:**
+  - Features: `feature/<nome-descritivo>` (ex: `feature/auth-jwt`, `feature/kanban-board`)
+  - Bug fixes: `fix/<nome-descritivo>` (ex: `fix/token-refresh-loop`)
+  - Sempre criar branch nova antes de executar um plano de implementação.
+
+## Superpowers Workflow
+
+O fluxo completo de desenvolvimento usando as skills superpowers segue esta ordem obrigatória:
+
+```
+1. brainstorming          → Explorar ideia, definir design, salvar em docs/spec/
+2. writing-plans          → Criar plano de implementação, salvar em docs/plan/
+3. executing-plans        → Criar branch feature/*, executar task por task
+4. requesting-code-review → Ao final da execução, solicitar code review
+5. receiving-code-review  → Processar feedback do review com rigor técnico
+6. finishing-a-development-branch → Decidir merge, PR ou cleanup
+```
+
+**Regras:**
+- Toda execução de plano DEVE começar criando uma branch `feature/<nome>` a partir de `main`.
+- Ao terminar a execução do plano, SEMPRE invocar `requesting-code-review` antes de qualquer merge/PR.
+- Após receber o review, usar `receiving-code-review` para processar o feedback.
+- Finalizar com `finishing-a-development-branch` para decidir como integrar o trabalho.
+- Nunca pular etapas. Cada implementação passa pelo fluxo completo.
 
 ## MVP Scope Boundaries
 
