@@ -131,6 +131,14 @@ src/
 - **`docs/plan/`** — All implementation plans (from superpowers:writing-plans skill). Always save plans here.
 - **`docs/`** — Original project specifications (PRD, MVP scope, architecture, design guidelines).
 
+### Checklist de Progresso nos Planos
+
+Todo plano de implementação DEVE ter um checklist `[ ]` / `[x]` na seção Task Summary. Regras:
+- Cada task do plano tem um checkbox: `- [ ] Task N: Descrição`
+- Ao **completar** cada task durante a execução, marcar imediatamente como `- [x] Task N: Descrição` no arquivo do plano e fazer commit.
+- **Nunca** deixar para marcar tudo no final. Marcar task por task, simultaneamente com a codificação.
+- Isso garante que se a sessão for interrompida, o plano reflete exatamente onde parou.
+
 ## Git Rules
 
 - **No Claude signatures.** Never add `Co-Authored-By: Claude` or any AI attribution to commits or PRs.

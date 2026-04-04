@@ -1312,20 +1312,18 @@ If no changes needed, no commit.
 
 ## Task Summary
 
-| Task | Description |
-|------|-------------|
-| 1 | Initialize Git Repo + .gitignore |
-| 2 | Docker Compose Dev (PostgreSQL) |
-| 3 | Scaffold Spring Boot Backend (+ Testcontainers) |
-| 4 | Backend Folder Structure + Config + Test Structure |
-| 5 | Backend Exception Handling Skeleton |
-| 6 | Backend Security Skeleton |
-| 7 | Verify Backend Starts |
-| 8 | Scaffold Angular Frontend |
-| 9 | Install Tailwind CSS v4 |
-| 10 | Install and Configure PrimeNG |
-| 11 | Frontend Folder Structure + Environments |
-| 12 | Frontend App Routes Skeleton |
-| 13 | Docker Compose Prod + Dockerfiles + Nginx |
-| 14 | README.md |
-| 15 | Final Verification |
+- [ ] Task 1: Initialize Git Repo + .gitignore
+- [ ] Task 2: Docker Compose Dev (PostgreSQL)
+- [ ] Task 3: Scaffold Spring Boot Backend (+ Testcontainers)
+- [ ] Task 4: Backend Folder Structure + Config + Test Structure
+- [ ] Task 5: Backend Exception Handling Skeleton
+- [ ] Task 6: Backend Security Skeleton
+- [ ] Task 7: Verify Backend Starts
+- [ ] Task 8: Scaffold Angular Frontend
+- [ ] Task 9: Install Tailwind CSS v4
+- [ ] Task 10: Install and Configure PrimeNG
+- [ ] Task 11: Frontend Folder Structure + Environments
+- [ ] Task 12: Frontend App Routes Skeleton
+- [ ] Task 13: Docker Compose Prod + Dockerfiles + Nginx
+- [ ] Task 14: README.md
+- [ ] Task 15: Final Verification
