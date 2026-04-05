@@ -148,51 +148,35 @@ Todo plano de implementação DEVE ter um checklist `[ ]` / `[x]` na seção Tas
 - **Nunca** deixar para marcar tudo no final. Marcar task por task, simultaneamente com a codificação.
 - Isso garante que se a sessão for interrompida, o plano reflete exatamente onde parou.
 
-### Separação por Camada (Backend / Frontend)
+### Estrutura de Tasks no Plano (camadas + paralelismo)
 
-Todo plano DEVE separar as tasks em seções **Backend** e **Frontend** no Task Summary. Regras:
+Todo plano DEVE separar tasks por camada e marcar paralelismo. Formato obrigatório:
 
-- Tasks backend vêm primeiro (APIs precisam existir antes do frontend consumir)
-- Cada seção tem sua própria numeração sequencial e parallel groups
-- Dependências cross-layer são explícitas (ex: "depende de Task B3 backend")
-- Formato obrigatório:
-  ```
-  ## Task Summary
+```
+## Task Summary
 
-  ### Backend
-  - [ ] Task B1: Entity User + Repository ⚡ PARALLEL GROUP A
-  - [ ] Task B2: Entity Workspace + Repository ⚡ PARALLEL GROUP A
-  - [ ] Task B3: Auth Service (sequencial — depende de B1)
-  - [ ] Task B4: Auth Controller + endpoints (depende de B3)
+### Backend
+- [ ] Task B1: Entity User + Repository ⚡ PARALLEL GROUP A
+- [ ] Task B2: Entity Workspace + Repository ⚡ PARALLEL GROUP A
+- [ ] Task B3: Auth Service (sequencial — depende de B1)
+- [ ] Task B4: Auth Controller + endpoints (depende de B3)
 
-  ### Frontend
-  - [ ] Task F1: AuthService + HTTP interceptor (depende de B4 backend)
-  - [ ] Task F2: Login page ⚡ PARALLEL GROUP B
-  - [ ] Task F3: Register page ⚡ PARALLEL GROUP B
-  - [ ] Task F4: Auth guard + redirect (depende de F1)
-  ```
+### Frontend
+- [ ] Task F1: AuthService + HTTP interceptor (depende de B4 backend)
+- [ ] Task F2: Login page ⚡ PARALLEL GROUP B
+- [ ] Task F3: Register page ⚡ PARALLEL GROUP B
+- [ ] Task F4: Auth guard + redirect (depende de F1)
+```
+
+**Regras de organização:**
 - Prefixo `B` para backend, `F` para frontend — facilita referência cruzada
-- Se a feature é apenas backend ou apenas frontend, usar apenas a seção relevante
+- Backend vem primeiro (APIs precisam existir antes do frontend consumir)
+- Dependências cross-layer são explícitas (ex: "depende de B4 backend")
+- Se a feature toca apenas uma camada, usar apenas a seção relevante
 
-### Paralelismo nas Tasks do Plano
-
-Todo plano DEVE identificar quais tasks podem ser executadas em paralelo. Regras:
-
-- Na seção Task Summary (dentro de cada camada), agrupar tasks paralelizáveis com marcação explícita:
-  ```
-  ### Backend
-  - [ ] Task B1: Setup do projeto (sequencial — base para tudo)
-  - [ ] Task B2: Entity User + Repository ⚡ PARALLEL GROUP A
-  - [ ] Task B3: Entity Workspace + Repository ⚡ PARALLEL GROUP A
-  - [ ] Task B4: Auth Service (sequencial — depende de B2)
-
-  ### Frontend
-  - [ ] Task F1: Auth service client (depende de B4 backend)
-  - [ ] Task F2: Login page ⚡ PARALLEL GROUP B
-  - [ ] Task F3: Register page ⚡ PARALLEL GROUP B
-  ```
-- Tasks no mesmo `PARALLEL GROUP` não têm dependência entre si e DEVEM ser executadas em paralelo usando a skill `dispatching-parallel-agents` ou lançando múltiplos Agent tool calls simultaneamente.
-- Tasks sem marcação `⚡ PARALLEL GROUP` são sequenciais e devem ser executadas na ordem.
+**Regras de paralelismo:**
+- Tasks no mesmo `⚡ PARALLEL GROUP` não têm dependência entre si e DEVEM ser executadas em paralelo via agentes
+- Tasks sem marcação `⚡` são sequenciais e devem ser executadas na ordem
 - **Na escrita do plano** (`writing-plans`): o autor DEVE analisar o grafo de dependências das tasks e marcar os grupos paralelos. Se todas as tasks forem sequenciais, declarar explicitamente: "Nenhuma task paralelizável — todas têm dependência sequencial."
 - **Na execução do plano** (`executing-plans`): SEMPRE despachar tasks paralelas ao mesmo tempo via agentes. Nunca executar sequencialmente tasks que estão marcadas como paralelas.
 - Cada agente paralelo trabalha em worktree isolado quando há risco de conflito de arquivos. Caso contrário, pode trabalhar no mesmo workspace se os arquivos são independentes.
