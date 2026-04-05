@@ -28,6 +28,15 @@ BriefFlow is a B2B SaaS platform for creative production management in digital m
 | Testing | Vitest (frontend), JUnit (backend) |
 | Deploy | Docker + Docker Compose + Nginx |
 
+## Consulta de Documentação (context7)
+
+Sempre usar o plugin **context7** (`context7-plugin:docs` / `context7-plugin:documentation-lookup`) para consultar documentação de bibliotecas, frameworks e ferramentas antes de implementar. Isso inclui:
+- APIs do Angular, PrimeNG, Tailwind CSS, Spring Boot, Spring Security, Flyway, MapStruct, etc.
+- Sintaxe, configuração, migrations, breaking changes entre versões
+- Quando houver dúvida sobre uso correto de qualquer dependência do projeto
+
+**Regra:** Não confiar apenas no conhecimento de treinamento — a documentação pode ter mudado. Consultar context7 primeiro, especialmente para Angular 20, PrimeNG 19+ e Tailwind v4 que são versões recentes.
+
 ## Build & Run Commands
 
 ### Backend (Spring Boot)
@@ -139,18 +148,48 @@ Todo plano de implementação DEVE ter um checklist `[ ]` / `[x]` na seção Tas
 - **Nunca** deixar para marcar tudo no final. Marcar task por task, simultaneamente com a codificação.
 - Isso garante que se a sessão for interrompida, o plano reflete exatamente onde parou.
 
+### Separação por Camada (Backend / Frontend)
+
+Todo plano DEVE separar as tasks em seções **Backend** e **Frontend** no Task Summary. Regras:
+
+- Tasks backend vêm primeiro (APIs precisam existir antes do frontend consumir)
+- Cada seção tem sua própria numeração sequencial e parallel groups
+- Dependências cross-layer são explícitas (ex: "depende de Task B3 backend")
+- Formato obrigatório:
+  ```
+  ## Task Summary
+
+  ### Backend
+  - [ ] Task B1: Entity User + Repository ⚡ PARALLEL GROUP A
+  - [ ] Task B2: Entity Workspace + Repository ⚡ PARALLEL GROUP A
+  - [ ] Task B3: Auth Service (sequencial — depende de B1)
+  - [ ] Task B4: Auth Controller + endpoints (depende de B3)
+
+  ### Frontend
+  - [ ] Task F1: AuthService + HTTP interceptor (depende de B4 backend)
+  - [ ] Task F2: Login page ⚡ PARALLEL GROUP B
+  - [ ] Task F3: Register page ⚡ PARALLEL GROUP B
+  - [ ] Task F4: Auth guard + redirect (depende de F1)
+  ```
+- Prefixo `B` para backend, `F` para frontend — facilita referência cruzada
+- Se a feature é apenas backend ou apenas frontend, usar apenas a seção relevante
+
 ### Paralelismo nas Tasks do Plano
 
 Todo plano DEVE identificar quais tasks podem ser executadas em paralelo. Regras:
 
-- Na seção Task Summary, agrupar tasks paralelizáveis com marcação explícita:
+- Na seção Task Summary (dentro de cada camada), agrupar tasks paralelizáveis com marcação explícita:
   ```
-  - [ ] Task 1: Setup do projeto (sequencial — base para tudo)
-  - [ ] Task 2: Entity User + Repository ⚡ PARALLEL GROUP A
-  - [ ] Task 3: Entity Workspace + Repository ⚡ PARALLEL GROUP A
-  - [ ] Task 4: Auth Service (sequencial — depende de Task 2)
-  - [ ] Task 5: User Controller ⚡ PARALLEL GROUP B
-  - [ ] Task 6: Workspace Controller ⚡ PARALLEL GROUP B
+  ### Backend
+  - [ ] Task B1: Setup do projeto (sequencial — base para tudo)
+  - [ ] Task B2: Entity User + Repository ⚡ PARALLEL GROUP A
+  - [ ] Task B3: Entity Workspace + Repository ⚡ PARALLEL GROUP A
+  - [ ] Task B4: Auth Service (sequencial — depende de B2)
+
+  ### Frontend
+  - [ ] Task F1: Auth service client (depende de B4 backend)
+  - [ ] Task F2: Login page ⚡ PARALLEL GROUP B
+  - [ ] Task F3: Register page ⚡ PARALLEL GROUP B
   ```
 - Tasks no mesmo `PARALLEL GROUP` não têm dependência entre si e DEVEM ser executadas em paralelo usando a skill `dispatching-parallel-agents` ou lançando múltiplos Agent tool calls simultaneamente.
 - Tasks sem marcação `⚡ PARALLEL GROUP` são sequenciais e devem ser executadas na ordem.
@@ -174,7 +213,7 @@ Todo plano DEVE identificar quais tasks podem ser executadas em paralelo. Regras
 
 ```
 1. brainstorming          → Explorar ideia, definir design, salvar em docs/spec/
-2. writing-plans          → Criar plano de implementação (TDD), salvar em docs/plan/
+2. writing-plans          → Criar plano via agente orquestrador (ver abaixo), salvar em docs/plan/
 3. executing-plans        → Criar branch feature/*, executar task por task (test-first)
 4. requesting-code-review → Ao final da execução, solicitar code review
 5. receiving-code-review  → Processar feedback do review com rigor técnico
@@ -188,6 +227,51 @@ Todo plano DEVE identificar quais tasks podem ser executadas em paralelo. Regras
 - Finalizar com `finishing-a-development-branch` para decidir como integrar o trabalho.
 - Nunca pular etapas. Cada implementação passa pelo fluxo completo.
 
+### Escrita de Planos — Agent Team Orquestrador (obrigatório)
+
+Toda invocação de `writing-plans` DEVE usar **Agent Teams** (TeamCreate + teammates). Isso é obrigatório, sem exceções.
+
+**Arquitetura da equipe:**
+
+```
+Team Lead (você) — cria a equipe, atribui tasks, consolida o plano final
+├── Teammate "backend-architect"  → Analisa spec, propõe entities, services, endpoints, migrations, testes
+├── Teammate "frontend-architect" → Analisa spec, propõe components, pages, services, routes, testes
+└── Team Lead consolida           → Unifica os dois planos, resolve dependências cruzadas, salva em docs/plan/
+```
+
+**Como executar:**
+
+1. **Criar a equipe** via `TeamCreate`:
+   ```
+   team_name: "plan-<nome-da-feature>"
+   description: "Planejamento de implementação para <feature>"
+   ```
+
+2. **Criar tasks na task list compartilhada** via `TaskCreate`:
+   - Task 1: "Arquitetura Backend — analisar spec e propor entities, services, endpoints, DTOs, migrations e lista de tasks com testes"
+   - Task 2: "Arquitetura Frontend — analisar spec e propor pages, components, services, routes e lista de tasks com testes"
+   - Task 3: "Consolidar plano unificado" (depende de Task 1 e 2, atribuída ao Team Lead)
+
+3. **Spawnar 2 teammates em paralelo** via Agent tool com `team_name`:
+   - **`backend-architect`**: recebe a spec + instrução para ler `docs/BACKEND-STRUCTURE.md` + contexto do domínio. Deve produzir: entities envolvidas, endpoints, services, DTOs, migrations, e lista de tasks backend com testes. Ao finalizar, marcar sua task como completed.
+   - **`frontend-architect`**: recebe a spec + instrução para ler `docs/FRONTEND-STRUCTURE.md` + `docs/DESIGN-GUIDELINES (1).md` + contexto do domínio. Deve produzir: pages, components, services, routes, e lista de tasks frontend com testes. Ao finalizar, marcar sua task como completed.
+
+4. **Aguardar teammates** — as mensagens dos teammates chegam automaticamente quando terminam (não fazer polling). Esperar ambos completarem antes de prosseguir.
+
+5. **Consolidar** o plano unificado com:
+   - Task Summary com checklist `[ ]` e marcação de `⚡ PARALLEL GROUP` onde aplicável
+   - Dependências claras entre tasks backend e frontend (ex: "Task 5 frontend depende de Task 3 backend")
+   - Ordem de execução respeitando: backend-first para APIs que o frontend consome
+
+6. **Salvar** o plano consolidado em `docs/plan/`
+
+7. **Encerrar teammates** via SendMessage com `shutdown_request` e depois **limpar a equipe** via `TeamDelete`.
+
+**Requer:** `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` no settings (já configurado).
+
+**Por que:** Planos escritos por um único agente tendem a ser superficiais em uma das camadas. Teammates especializados com context window própria produzem análises mais profundas, e a task list compartilhada garante coordenação sem conflitos.
+
 ### Fluxo de Correção de Bugs
 
 - **Bug simples** (causa óbvia, fix direto): corrigir diretamente, sem skill especial.
@@ -195,6 +279,16 @@ Todo plano DEVE identificar quais tasks podem ser executadas em paralelo. Regras
   1. `systematic-debugging` → Investigar root cause com método estruturado (reproduzir → isolar → diagnosticar → corrigir)
   2. `verification-before-completion` → Verificar que o fix realmente resolve o problema, rodar testes, confirmar que nada quebrou
 - Criar branch `fix/<nome>` para bugs que precisam de debugging complexo.
+
+### Frontend Design (skill obrigatória)
+
+Toda task que envolva criação ou modificação de interface frontend DEVE invocar a skill `frontend-design` antes de implementar. Isso inclui:
+- Criar componentes visuais (páginas, modais, formulários, dashboards, cards, etc.)
+- Alterar layout, estilo ou estrutura visual de componentes existentes
+- Implementar telas descritas em specs ou planos
+- Qualquer trabalho que resulte em mudanças visíveis ao usuário na UI
+
+**Regra:** Se a task toca HTML/template/estilo de componente Angular → invocar `frontend-design`. Sem exceções.
 
 ## Test-Driven Development (TDD)
 
