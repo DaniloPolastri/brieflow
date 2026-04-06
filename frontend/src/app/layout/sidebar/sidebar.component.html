@@ -1,0 +1,48 @@
+<aside class="flex h-full w-[240px] shrink-0 flex-col border-r border-gray-200 bg-white">
+  <!-- Logo -->
+  <div class="flex h-14 items-center gap-2.5 px-5">
+    <div class="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-500">
+      <svg class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="text-[15px] font-semibold tracking-tight text-gray-900">BriefFlow</span>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 px-3 pt-2">
+    <ul class="space-y-0.5">
+      @for (item of visibleNavItems(); track item.route) {
+        <li>
+          <a [routerLink]="item.route"
+             routerLinkActive="active-nav-item"
+             [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+             class="group flex items-center gap-3 rounded-md px-3 py-2 text-[13px] text-gray-600 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-900">
+            <i [class]="item.icon"
+               class="text-[16px] text-gray-400 transition-colors duration-150 group-hover:text-gray-600"
+               style="width: 20px; text-align: center;"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <!-- User section -->
+  <div class="border-t border-gray-200 px-3 py-3">
+    <div class="flex items-center gap-3 rounded-md px-3 py-2">
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[12px] font-semibold text-indigo-700">
+        {{ userInitial() }}
+      </div>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-[13px] font-medium text-gray-900">{{ userName() }}</p>
+        <p class="truncate text-[11px] text-gray-400">{{ userEmail() }}</p>
+      </div>
+    </div>
+    <button (click)="logout()"
+            class="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-700">
+      <i class="pi pi-sign-out text-[14px]" style="width: 20px; text-align: center;"></i>
+      <span>Sair</span>
+    </button>
+  </div>
+</aside>

@@ -3,10 +3,10 @@
 > Arquivo de auto-melhoria contínua. Cada entrada é uma regra acionável que previne erros repetidos entre sessões.
 > Consultar este arquivo no início de cada sessão de implementação.
 
-## [Angular] — Sempre invocar frontend-design antes de implementar UI
-- **Erro:** Implementei login, register e dashboard pages direto do plano sem invocar a skill `frontend-design`
-- **Regra:** ANTES de escrever qualquer HTML/template/estilo de componente Angular, invocar `frontend-design`. Sem exceções — mesmo que o plano já tenha o template pronto
-- **Contexto:** Toda task que cria ou modifica interface visual (pages, modais, formulários, cards, dashboards)
+## [Angular] — Sempre invocar frontend-design antes de implementar UI (ERRO REINCIDENTE)
+- **Erro:** Implementei login, register e dashboard pages direto do plano sem invocar a skill `frontend-design`. REINCIDÊNCIA na RF02: implementei 5 telas (register mod, invite dialog, member list, accept invite, settings) via subagentes sem invocar frontend-design para nenhuma delas
+- **Regra:** ANTES de escrever qualquer HTML/template/estilo de componente Angular, invocar `frontend-design`. Sem exceções — mesmo que o plano já tenha o template pronto, mesmo que a task seja delegada a subagente. O subagente NÃO substitui a skill de design. A skill deve ser invocada pelo orquestrador ANTES de despachar o subagente implementador
+- **Contexto:** Toda task que cria ou modifica interface visual (pages, modais, formulários, cards, dashboards). Inclui tasks delegadas via subagent-driven-development
 
 ## [Geral] — Marcar tasks no plano em tempo real e executar parallel groups em paralelo
 - **Erro:** Executei tasks do PARALLEL GROUP A sequencialmente e não marquei `[x]` no plano conforme completava cada task
