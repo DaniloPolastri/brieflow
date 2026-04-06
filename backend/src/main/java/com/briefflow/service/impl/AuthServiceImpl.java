@@ -112,7 +112,7 @@ public class AuthServiceImpl implements AuthService {
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshTokenRepository.save(refreshToken);
 
-        UserInfoDTO userInfo = new UserInfoDTO(user.getId(), user.getName(), user.getEmail());
+        UserInfoDTO userInfo = new UserInfoDTO(user.getId(), user.getName(), user.getEmail(), null, null, null, null);
 
         return new TokenResponseDTO(
                 accessToken,
