@@ -315,6 +315,15 @@ Toda task que envolva criação ou modificação de interface frontend DEVE invo
 
 **Regra:** Se a task toca HTML/template/estilo de componente Angular → invocar `frontend-design`. Sem exceções.
 
+### Visual Companion — Visualização no Browser (obrigatório)
+
+Durante brainstorming e refino de telas, SEMPRE usar o **Visual Companion** para renderizar previews no browser. Isso inclui:
+- Brainstorming de design de telas (`brainstorming` skill) — ao definir layout, componentes visuais ou estilo
+- Refino de UI durante `frontend-design` — ao iterar sobre a aparência de componentes
+- Qualquer momento em que se discute ou decide sobre design visual de interfaces
+
+**Regra:** Não aprovar design de tela sem antes visualizar no browser via Visual Companion. O feedback visual é obrigatório para validar decisões de layout, espaçamento, cores e hierarquia antes de partir para implementação.
+
 ## Test-Driven Development (TDD)
 
 Este projeto segue TDD como padrão. Toda implementação de feature ou bugfix segue o ciclo:
