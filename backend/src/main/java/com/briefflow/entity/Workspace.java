@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 
 @Entity
@@ -48,7 +49,9 @@ public class Workspace {
     }
 
     String generateSlug(String name) {
-        return name.toLowerCase()
+        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
+        return normalized.toLowerCase()
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
                 .replaceAll("[^a-z0-9\\s-]", "")
                 .replaceAll("\\s+", "-")
                 .replaceAll("-+", "-")

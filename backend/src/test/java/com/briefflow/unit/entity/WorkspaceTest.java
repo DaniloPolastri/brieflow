@@ -24,7 +24,16 @@ class WorkspaceTest {
         workspace.setName("Café & Design Ltda.");
         workspace.onCreate();
 
-        assertEquals("caf-design-ltda", workspace.getSlug());
+        assertEquals("cafe-design-ltda", workspace.getSlug());
+    }
+
+    @Test
+    void should_transliterateAccents_when_generatingSlug() {
+        Workspace workspace = new Workspace();
+        workspace.setName("Agência Criação & Design");
+        workspace.onCreate();
+
+        assertEquals("agencia-criacao-design", workspace.getSlug());
     }
 
     @Test
