@@ -54,7 +54,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public MembersListResponseDTO listMembers(Long workspaceId) {
-        List<Member> members = memberRepository.findByWorkspaceId(workspaceId);
+        List<Member> members = memberRepository.findByWorkspaceIdWithUser(workspaceId);
         List<InviteToken> pendingInvites = inviteTokenRepository.findByWorkspaceIdAndUsedFalse(workspaceId);
 
         List<MemberResponseDTO> memberDTOs = members.stream()
@@ -109,6 +109,12 @@ public class MemberServiceImpl implements MemberService {
                 throw new BusinessException("Usuario ja e membro deste workspace");
             }
         });
+
+        // Invalidate any existing pending tokens for the same email+workspace
+        List<InviteToken> existingTokens = inviteTokenRepository
+                .findByWorkspaceIdAndEmailAndUsedFalse(workspaceId, request.email());
+        existingTokens.forEach(t -> t.setUsed(true));
+        inviteTokenRepository.saveAll(existingTokens);
 
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workspace nao encontrado"));

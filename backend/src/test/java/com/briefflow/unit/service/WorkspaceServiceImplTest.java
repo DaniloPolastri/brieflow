@@ -2,8 +2,12 @@ package com.briefflow.unit.service;
 
 import com.briefflow.dto.workspace.UpdateWorkspaceRequestDTO;
 import com.briefflow.dto.workspace.WorkspaceResponseDTO;
+import com.briefflow.entity.Member;
 import com.briefflow.entity.Workspace;
+import com.briefflow.enums.MemberRole;
+import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
+import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.WorkspaceRepository;
 import com.briefflow.service.impl.WorkspaceServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -23,6 +27,9 @@ class WorkspaceServiceImplTest {
 
     @Mock
     private WorkspaceRepository workspaceRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private WorkspaceServiceImpl workspaceService;
@@ -52,17 +59,21 @@ class WorkspaceServiceImplTest {
     }
 
     @Test
-    void should_updateWorkspace_when_validRequest() {
+    void should_updateWorkspace_when_callerIsOwner() {
+        Member caller = new Member();
+        caller.setRole(MemberRole.OWNER);
+
         Workspace workspace = new Workspace();
         workspace.setId(1L);
         workspace.setName("Old Name");
         workspace.setSlug("old-name");
 
+        when(memberRepository.findByUserIdAndWorkspaceId(10L, 1L)).thenReturn(Optional.of(caller));
         when(workspaceRepository.findById(1L)).thenReturn(Optional.of(workspace));
         when(workspaceRepository.save(any(Workspace.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");
-        WorkspaceResponseDTO result = workspaceService.updateWorkspace(1L, request);
+        WorkspaceResponseDTO result = workspaceService.updateWorkspace(1L, 10L, request);
 
         assertNotNull(result);
         assertEquals("New Name", result.name());
@@ -70,10 +81,56 @@ class WorkspaceServiceImplTest {
     }
 
     @Test
+    void should_updateWorkspace_when_callerIsManager() {
+        Member caller = new Member();
+        caller.setRole(MemberRole.MANAGER);
+
+        Workspace workspace = new Workspace();
+        workspace.setId(1L);
+        workspace.setName("Old Name");
+        workspace.setSlug("old-name");
+
+        when(memberRepository.findByUserIdAndWorkspaceId(20L, 1L)).thenReturn(Optional.of(caller));
+        when(workspaceRepository.findById(1L)).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.save(any(Workspace.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");
+        WorkspaceResponseDTO result = workspaceService.updateWorkspace(1L, 20L, request);
+
+        assertNotNull(result);
+        assertEquals("New Name", result.name());
+    }
+
+    @Test
+    void should_throwForbidden_when_callerIsCreative() {
+        Member caller = new Member();
+        caller.setRole(MemberRole.CREATIVE);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(30L, 1L)).thenReturn(Optional.of(caller));
+
+        UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");
+        assertThrows(ForbiddenException.class, () -> workspaceService.updateWorkspace(1L, 30L, request));
+
+        verify(workspaceRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwNotFound_when_callerNotMember() {
+        when(memberRepository.findByUserIdAndWorkspaceId(99L, 1L)).thenReturn(Optional.empty());
+
+        UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");
+        assertThrows(ResourceNotFoundException.class, () -> workspaceService.updateWorkspace(1L, 99L, request));
+    }
+
+    @Test
     void should_throwNotFound_when_updatingNonExistentWorkspace() {
+        Member caller = new Member();
+        caller.setRole(MemberRole.OWNER);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(10L, 99L)).thenReturn(Optional.of(caller));
         when(workspaceRepository.findById(99L)).thenReturn(Optional.empty());
 
         UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");
-        assertThrows(ResourceNotFoundException.class, () -> workspaceService.updateWorkspace(99L, request));
+        assertThrows(ResourceNotFoundException.class, () -> workspaceService.updateWorkspace(99L, 10L, request));
     }
 }

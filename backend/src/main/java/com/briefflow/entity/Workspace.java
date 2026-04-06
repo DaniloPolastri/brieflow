@@ -40,11 +40,14 @@ public class Workspace {
     }
 
     @PreUpdate
-    protected void onUpdate() {
+    public void onUpdate() {
         updatedAt = LocalDateTime.now();
+        if (name != null) {
+            slug = generateSlug(name);
+        }
     }
 
-    private String generateSlug(String name) {
+    String generateSlug(String name) {
         return name.toLowerCase()
                 .replaceAll("[^a-z0-9\\s-]", "")
                 .replaceAll("\\s+", "-")

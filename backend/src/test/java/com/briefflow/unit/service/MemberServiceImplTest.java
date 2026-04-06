@@ -56,7 +56,7 @@ class MemberServiceImplTest {
         member.setPosition(MemberPosition.DIRETOR_DE_ARTE);
         member.setCreatedAt(LocalDateTime.now());
 
-        when(memberRepository.findByWorkspaceId(1L)).thenReturn(List.of(member));
+        when(memberRepository.findByWorkspaceIdWithUser(1L)).thenReturn(List.of(member));
         when(inviteTokenRepository.findByWorkspaceIdAndUsedFalse(1L)).thenReturn(List.of());
 
         MembersListResponseDTO result = memberService.listMembers(1L);
@@ -78,6 +78,7 @@ class MemberServiceImplTest {
 
         when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(callerMember));
         when(userRepository.findByEmail("new@test.com")).thenReturn(Optional.empty());
+        when(inviteTokenRepository.findByWorkspaceIdAndEmailAndUsedFalse(1L, "new@test.com")).thenReturn(List.of());
         when(workspaceRepository.findById(1L)).thenReturn(Optional.of(workspace));
         when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(inviteTokenRepository.save(any(InviteToken.class))).thenAnswer(inv -> {

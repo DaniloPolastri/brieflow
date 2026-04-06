@@ -25,7 +25,8 @@ public class WorkspaceController {
     @PutMapping
     public ResponseEntity<WorkspaceResponseDTO> updateWorkspace(
             @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId,
             @Valid @RequestBody UpdateWorkspaceRequestDTO request) {
-        return ResponseEntity.ok(workspaceService.updateWorkspace(workspaceId, request));
+        return ResponseEntity.ok(workspaceService.updateWorkspace(workspaceId, userId, request));
     }
 }

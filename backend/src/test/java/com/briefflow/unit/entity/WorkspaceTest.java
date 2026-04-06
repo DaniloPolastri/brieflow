@@ -26,4 +26,18 @@ class WorkspaceTest {
 
         assertEquals("caf-design-ltda", workspace.getSlug());
     }
+
+    @Test
+    void should_updateSlug_when_nameChangesOnUpdate() {
+        Workspace workspace = new Workspace();
+        workspace.setName("Agencia Original");
+        workspace.onCreate();
+        assertEquals("agencia-original", workspace.getSlug());
+
+        workspace.setName("Novo Nome");
+        workspace.onUpdate();
+
+        assertEquals("novo-nome", workspace.getSlug());
+        assertNotNull(workspace.getUpdatedAt());
+    }
 }
