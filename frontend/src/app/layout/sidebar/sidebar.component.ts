@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, computed, signal, ElementRef, HostListener } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { StorageService } from '../../core/services/storage.service';
@@ -33,12 +33,25 @@ export class SidebarComponent {
   private readonly authService = inject(AuthService);
   private readonly storage = inject(StorageService);
   private readonly router = inject(Router);
+  private readonly elRef = inject(ElementRef);
 
   readonly currentUser = computed(() => this.authService.currentUser());
   readonly userName = computed(() => this.currentUser()?.name ?? '');
   readonly userEmail = computed(() => this.currentUser()?.email ?? '');
   readonly userInitial = computed(() => this.userName()?.charAt(0).toUpperCase() ?? '?');
   readonly userRole = computed(() => this.currentUser()?.role ?? '');
+  readonly showUserMenu = signal(false);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showUserMenu() && !this.elRef.nativeElement.querySelector('.user-menu-area')?.contains(event.target)) {
+      this.showUserMenu.set(false);
+    }
+  }
+
+  toggleUserMenu(): void {
+    this.showUserMenu.update(v => !v);
+  }
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'pi pi-objects-column', route: '/dashboard' },

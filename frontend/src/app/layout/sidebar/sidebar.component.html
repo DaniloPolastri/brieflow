@@ -29,20 +29,29 @@
   </nav>
 
   <!-- User section -->
-  <div class="border-t border-gray-200 px-3 py-3">
-    <div class="flex items-center gap-3 rounded-md px-3 py-2">
+  <div class="relative border-t border-gray-200 px-3 py-3 user-menu-area">
+    <!-- Popover menu -->
+    @if (showUserMenu()) {
+      <div class="absolute bottom-full left-3 right-3 mb-1 rounded-lg border border-gray-200 bg-white py-1 shadow-md">
+        <button (click)="logout(); showUserMenu.set(false)"
+                class="flex w-full items-center gap-2.5 px-3 py-2 text-[13px] text-gray-600 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900">
+          <i class="pi pi-sign-out text-[14px] text-gray-400"></i>
+          <span>Sair da conta</span>
+        </button>
+      </div>
+    }
+
+    <!-- User button -->
+    <button (click)="toggleUserMenu()"
+            class="flex w-full items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 hover:bg-gray-100">
       <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[12px] font-semibold text-indigo-700">
         {{ userInitial() }}
       </div>
-      <div class="min-w-0 flex-1">
+      <div class="min-w-0 flex-1 text-left">
         <p class="truncate text-[13px] font-medium text-gray-900">{{ userName() }}</p>
         <p class="truncate text-[11px] text-gray-400">{{ userEmail() }}</p>
       </div>
-    </div>
-    <button (click)="logout()"
-            class="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-700">
-      <i class="pi pi-sign-out text-[14px]" style="width: 20px; text-align: center;"></i>
-      <span>Sair</span>
+      <i class="pi pi-ellipsis-h text-[14px] text-gray-400"></i>
     </button>
   </div>
 </aside>
