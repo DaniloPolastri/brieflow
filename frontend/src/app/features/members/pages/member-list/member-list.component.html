@@ -52,7 +52,7 @@
               <div class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-[13px] font-medium text-gray-500">?</div>
               <div>
                 <div class="text-[14px] text-gray-700">{{ invite.email }}</div>
-                <div class="text-[12px] text-gray-400">Expira em {{ invite.expiresAt }}</div>
+                <div class="text-[12px] text-gray-400">Expira em {{ formatExpiresAt(invite.expiresAt) }}</div>
               </div>
             </div>
             <p-tag value="Pendente" severity="warn" />
