@@ -33,6 +33,17 @@
     </div>
 
     <div>
+      <label for="workspaceName" class="mb-1.5 block text-[13px] font-medium text-gray-700">Nome da agência</label>
+      <input pInputText id="workspaceName" formControlName="workspaceName" placeholder="Ex: Agência Criativa" class="w-full" />
+      @if (form.controls.workspaceName.touched && form.controls.workspaceName.hasError('required')) {
+        <small class="mt-1 block text-[12px] text-red-500">Nome da agência é obrigatório</small>
+      }
+      @if (form.controls.workspaceName.touched && form.controls.workspaceName.hasError('maxlength')) {
+        <small class="mt-1 block text-[12px] text-red-500">Máximo de 150 caracteres</small>
+      }
+    </div>
+
+    <div>
       <label for="password" class="mb-1.5 block text-[13px] font-medium text-gray-700">Senha</label>
       <p-password id="password" formControlName="password"
                   [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />

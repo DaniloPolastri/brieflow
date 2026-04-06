@@ -31,6 +31,7 @@ describe('RegisterComponent', () => {
     component.form.patchValue({
       name: 'John Doe',
       email: 'john@test.com',
+      workspaceName: 'Agência Criativa',
       password: 'password123',
       confirmPassword: 'password123',
     });
