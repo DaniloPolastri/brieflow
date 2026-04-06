@@ -191,6 +191,47 @@ Todo plano DEVE separar tasks por camada e marcar paralelismo. Formato obrigató
   - Bug fixes: `fix/<nome-descritivo>` (ex: `fix/token-refresh-loop`)
   - Sempre criar branch nova antes de executar um plano de implementação.
 
+## Self-Improvement Loop
+
+Este projeto usa um arquivo `docs/lessons.md` como memória persistente de erros e aprendizados. Objetivo: **zero erros repetidos entre sessões.**
+
+### Como funciona
+
+1. **Capturar:** Após QUALQUER correção do usuário (erro de implementação, padrão errado, abordagem rejeitada), registrar imediatamente em `docs/lessons.md`
+2. **Prevenir:** Cada entrada deve ser uma **regra acionável** que previna o mesmo erro no futuro — não apenas uma descrição do que aconteceu
+3. **Revisar:** No início de cada sessão de implementação, ler `docs/lessons.md` antes de começar a codar
+4. **Iterar:** Atualizar e refinar as lições conforme o projeto evolui. Remover lições que não se aplicam mais
+
+### Formato de `docs/lessons.md`
+
+```markdown
+# Lessons Learned
+
+## [Categoria] — Título curto da lição
+- **Erro:** O que foi feito errado
+- **Regra:** O que fazer em vez disso (imperativo, direto)
+- **Contexto:** Onde/quando essa regra se aplica
+
+## [Angular] — Não usar decorators legados
+- **Erro:** Usei `@Input()` decorator em vez de `input()` signal
+- **Regra:** Sempre usar `input()`, `output()`, `signal()`, `computed()` — nunca decorators
+- **Contexto:** Todos os componentes Angular do projeto
+
+## [Spring] — FetchType padrão
+- **Erro:** Esqueci de colocar `FetchType.LAZY` em `@ManyToOne`
+- **Regra:** TODO `@ManyToOne` e `@OneToMany` DEVE ter `fetch = FetchType.LAZY`
+- **Contexto:** Todas as entities JPA
+```
+
+### Regras
+
+- **Registrar na hora.** Não esperar o fim da sessão — registrar assim que o erro for corrigido
+- **Uma lição por erro.** Cada entrada é atômica e independente
+- **Regra, não narrativa.** A entrada deve ser imperativa ("Sempre fazer X", "Nunca fazer Y"), não descritiva ("Aconteceu X")
+- **Categorizar.** Usar categorias como `[Angular]`, `[Spring]`, `[JPA]`, `[Git]`, `[TDD]`, `[PrimeNG]`, `[Tailwind]`, `[Docker]`, `[API]`, `[Geral]`
+- **Sem duplicatas.** Antes de adicionar, verificar se já existe uma lição similar. Se existir, refinar a existente
+- **Limpeza periódica.** Se uma lição foi incorporada no CLAUDE.md como regra formal, remover de `docs/lessons.md` para evitar redundância
+
 ## Superpowers Workflow
 
 ### Fluxo de Implementação (features)
