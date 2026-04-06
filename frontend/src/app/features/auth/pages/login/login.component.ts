@@ -11,42 +11,56 @@ import { AuthService } from '../../../../core/services/auth.service';
   selector: 'app-login',
   imports: [ReactiveFormsModule, RouterLink, InputTextModule, PasswordModule, ButtonModule, MessageModule],
   template: `
-    <div class="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
-      <h2 class="mb-6 text-xl font-semibold text-gray-900">Entrar</h2>
+    <div>
+      <h1 class="text-[22px] font-semibold tracking-tight text-gray-900">Entrar na sua conta</h1>
+      <p class="mt-1.5 text-[14px] text-gray-500">
+        Insira suas credenciais para acessar o workspace.
+      </p>
 
       @if (errorMessage()) {
-        <p-message severity="error" [text]="errorMessage()!" styleClass="mb-4 w-full" />
+        <div class="mt-5 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-[13px] text-red-700">
+          <i class="pi pi-exclamation-circle mt-0.5 text-red-400" style="font-size: 14px"></i>
+          <span>{{ errorMessage() }}</span>
+        </div>
       }
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="mb-4">
-          <label for="email" class="mb-1 block text-sm font-medium text-gray-700">Email</label>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-7 space-y-5">
+        <div>
+          <label for="email" class="mb-1.5 block text-[13px] font-medium text-gray-700">Email</label>
           <input pInputText id="email" formControlName="email" type="email"
-                 placeholder="seu@email.com" class="w-full" />
+                 placeholder="voce@agencia.com" class="w-full" />
           @if (form.controls.email.touched && form.controls.email.hasError('required')) {
-            <small class="text-red-500">Email e obrigatorio</small>
+            <small class="mt-1 block text-[12px] text-red-500">Email e obrigatorio</small>
           }
           @if (form.controls.email.touched && form.controls.email.hasError('email')) {
-            <small class="text-red-500">Email invalido</small>
+            <small class="mt-1 block text-[12px] text-red-500">Email invalido</small>
           }
         </div>
 
-        <div class="mb-6">
-          <label for="password" class="mb-1 block text-sm font-medium text-gray-700">Senha</label>
+        <div>
+          <label for="password" class="mb-1.5 block text-[13px] font-medium text-gray-700">Senha</label>
           <p-password id="password" formControlName="password"
                       [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
           @if (form.controls.password.touched && form.controls.password.hasError('required')) {
-            <small class="text-red-500">Senha e obrigatoria</small>
+            <small class="mt-1 block text-[12px] text-red-500">Senha e obrigatoria</small>
           }
         </div>
 
         <p-button type="submit" label="Entrar" [loading]="loading()"
-                  [disabled]="form.invalid || loading()" styleClass="w-full" />
+                  [disabled]="form.invalid || loading()" styleClass="w-full !mt-7" />
       </form>
 
-      <p class="mt-4 text-center text-sm text-gray-500">
-        Nao tem conta?
-        <a routerLink="/auth/register" class="font-medium text-indigo-600 hover:text-indigo-500">Criar conta</a>
+      <div class="mt-6 flex items-center gap-3">
+        <div class="h-px flex-1 bg-gray-200"></div>
+        <span class="text-[12px] font-medium text-gray-400 uppercase tracking-wider">ou</span>
+        <div class="h-px flex-1 bg-gray-200"></div>
+      </div>
+
+      <p class="mt-5 text-center text-[13px] text-gray-500">
+        Ainda nao tem conta?
+        <a routerLink="/auth/register" class="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+          Criar conta gratis
+        </a>
       </p>
     </div>
   `,
