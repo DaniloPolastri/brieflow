@@ -27,10 +27,11 @@ public class JwtService {
         this.refreshExpirationMs = refreshExpirationMs;
     }
 
-    public String generateAccessToken(Long userId, String email) {
+    public String generateAccessToken(Long userId, String email, Long workspaceId) {
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
+                .claim("workspaceId", workspaceId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessExpirationMs))
                 .signWith(key)
@@ -39,6 +40,10 @@ public class JwtService {
 
     public Long extractUserId(String token) {
         return parseClaims(token).get("userId", Long.class);
+    }
+
+    public Long extractWorkspaceId(String token) {
+        return parseClaims(token).get("workspaceId", Long.class);
     }
 
     public String extractEmail(String token) {

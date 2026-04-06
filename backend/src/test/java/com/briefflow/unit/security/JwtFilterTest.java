@@ -45,6 +45,8 @@ class JwtFilterTest {
 
         when(jwtService.isTokenValid("valid-token")).thenReturn(true);
         when(jwtService.extractEmail("valid-token")).thenReturn("user@test.com");
+        when(jwtService.extractUserId("valid-token")).thenReturn(1L);
+        when(jwtService.extractWorkspaceId("valid-token")).thenReturn(10L);
 
         UserDetails userDetails = new User("user@test.com", "", Collections.emptyList());
         when(userDetailsService.loadUserByUsername("user@test.com")).thenReturn(userDetails);
@@ -53,6 +55,8 @@ class JwtFilterTest {
         jwtFilter.doFilter(request, response, filterChain);
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+        assertEquals(1L, request.getAttribute("userId"));
+        assertEquals(10L, request.getAttribute("workspaceId"));
         verify(filterChain).doFilter(request, response);
 
         SecurityContextHolder.clearContext();

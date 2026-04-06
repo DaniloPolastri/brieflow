@@ -56,7 +56,7 @@ class AuthControllerTest {
 
     @Test
     void should_register_when_validRequest() throws Exception {
-        RegisterRequestDTO request = new RegisterRequestDTO("John Doe", "john@test.com", "password123");
+        RegisterRequestDTO request = new RegisterRequestDTO("John Doe", "john@test.com", "password123", "Acme Agency");
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -71,7 +71,7 @@ class AuthControllerTest {
 
     @Test
     void should_returnConflict_when_emailAlreadyExists() throws Exception {
-        RegisterRequestDTO request = new RegisterRequestDTO("John", "john@test.com", "password123");
+        RegisterRequestDTO request = new RegisterRequestDTO("John", "john@test.com", "password123", "Acme Agency");
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +86,7 @@ class AuthControllerTest {
 
     @Test
     void should_returnBadRequest_when_invalidRegisterData() throws Exception {
-        RegisterRequestDTO request = new RegisterRequestDTO("", "not-email", "short");
+        RegisterRequestDTO request = new RegisterRequestDTO("", "not-email", "short", "");
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +96,7 @@ class AuthControllerTest {
 
     @Test
     void should_login_when_validCredentials() throws Exception {
-        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123");
+        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123", "Acme Agency");
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(register)));
@@ -112,7 +112,7 @@ class AuthControllerTest {
 
     @Test
     void should_returnUnauthorized_when_wrongPassword() throws Exception {
-        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123");
+        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123", "Acme Agency");
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(register)));
@@ -126,7 +126,7 @@ class AuthControllerTest {
 
     @Test
     void should_refreshToken_when_validRefreshToken() throws Exception {
-        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123");
+        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123", "Acme Agency");
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(register)))
@@ -145,7 +145,7 @@ class AuthControllerTest {
 
     @Test
     void should_returnUnauthorized_when_refreshWithRevokedToken() throws Exception {
-        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123");
+        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123", "Acme Agency");
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(register)))
@@ -167,7 +167,7 @@ class AuthControllerTest {
 
     @Test
     void should_logout_when_validRefreshToken() throws Exception {
-        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123");
+        RegisterRequestDTO register = new RegisterRequestDTO("John", "john@test.com", "password123", "Acme Agency");
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(register)))
