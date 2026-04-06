@@ -10,6 +10,7 @@ import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
 import com.briefflow.exception.UnauthorizedException;
+import com.briefflow.mapper.MemberMapper;
 import com.briefflow.repository.*;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.MemberService;
@@ -19,11 +20,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class MemberServiceImpl implements MemberService {
+
+    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     private final MemberRepository memberRepository;
     private final InviteTokenRepository inviteTokenRepository;
@@ -65,7 +69,7 @@ public class MemberServiceImpl implements MemberService {
                         m.getUser().getEmail(),
                         m.getRole().name(),
                         m.getPosition().name(),
-                        m.getCreatedAt().toString()
+                        m.getCreatedAt().format(ISO_FORMATTER)
                 ))
                 .toList();
 
@@ -77,7 +81,7 @@ public class MemberServiceImpl implements MemberService {
                         t.getRole().name(),
                         t.getPosition().name(),
                         null,
-                        t.getExpiresAt().toString()
+                        t.getExpiresAt().format(ISO_FORMATTER)
                 ))
                 .toList();
 
@@ -140,7 +144,7 @@ public class MemberServiceImpl implements MemberService {
                 inviteToken.getRole().name(),
                 inviteToken.getPosition().name(),
                 inviteLink,
-                inviteToken.getExpiresAt().toString()
+                inviteToken.getExpiresAt().format(ISO_FORMATTER)
         );
     }
 
