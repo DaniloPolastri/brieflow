@@ -17,7 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/')) {
+      if (error.status === 401 && !req.url.includes('/auth/') && !req.url.includes('/api/v1/invite/')) {
         return handleRefresh(req, next, authService, storage, router);
       }
       return throwError(() => error);

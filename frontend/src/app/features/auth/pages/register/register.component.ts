@@ -35,7 +35,7 @@ export class RegisterComponent {
     this.errorMessage.set(null);
 
     const { name, email, password } = this.form.getRawValue();
-    this.authService.register({ name, email, password }).subscribe({
+    this.authService.register({ name, email, password, workspaceName: '' }).subscribe({
       next: () => {
         this.loading.set(false);
         this.router.navigate(['/dashboard']);

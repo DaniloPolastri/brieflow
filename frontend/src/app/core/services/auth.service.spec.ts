@@ -48,7 +48,7 @@ describe('AuthService', () => {
       user: { id: 1, name: 'John', email: 'john@test.com' },
     };
 
-    service.register({ name: 'John', email: 'john@test.com', password: 'pass' }).subscribe();
+    service.register({ name: 'John', email: 'john@test.com', password: 'pass', workspaceName: 'Test Workspace' }).subscribe();
 
     const req = httpMock.expectOne('http://localhost:8080/api/v1/auth/register');
     expect(req.request.method).toBe('POST');
