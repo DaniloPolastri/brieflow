@@ -25,6 +25,14 @@ export const routes: Routes = [
             m => m.DashboardComponent
           ),
       },
+      {
+        path: 'members',
+        loadChildren: () => import('./features/members/members.routes'),
+      },
+      {
+        path: 'settings',
+        loadChildren: () => import('./features/settings/settings.routes'),
+      },
     ],
   },
   { path: '**', redirectTo: 'auth/login' },
