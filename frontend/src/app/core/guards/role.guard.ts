@@ -8,7 +8,7 @@ export const roleGuard = (...allowedRoles: string[]): CanActivateFn => {
     const router = inject(Router);
 
     const user = storage.getUser();
-    const userRole = (user as any)?.role;
+    const userRole = user?.role;
 
     if (userRole && allowedRoles.includes(userRole)) {
       return true;

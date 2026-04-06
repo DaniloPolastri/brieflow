@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { PublicLayoutComponent } from './layout/public-layout/public-layout.component';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -31,6 +32,7 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
+        canActivate: [roleGuard('OWNER', 'MANAGER')],
         loadChildren: () => import('./features/settings/settings.routes'),
       },
     ],

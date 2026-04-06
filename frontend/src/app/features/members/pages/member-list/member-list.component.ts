@@ -76,6 +76,9 @@ export class MemberListComponent implements OnInit {
       accept: () => {
         this.memberApi.remove(member.id).subscribe({
           next: () => this.loadMembers(),
+          error: (err) => {
+            console.error('Erro ao remover membro:', err);
+          },
         });
       },
     });
