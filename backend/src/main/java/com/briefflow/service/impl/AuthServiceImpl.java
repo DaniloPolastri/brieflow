@@ -1,12 +1,18 @@
 package com.briefflow.service.impl;
 
 import com.briefflow.dto.auth.*;
+import com.briefflow.entity.Member;
 import com.briefflow.entity.RefreshToken;
 import com.briefflow.entity.User;
+import com.briefflow.entity.Workspace;
+import com.briefflow.enums.MemberPosition;
+import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.UnauthorizedException;
+import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.RefreshTokenRepository;
 import com.briefflow.repository.UserRepository;
+import com.briefflow.repository.WorkspaceRepository;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.AuthService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,15 +27,21 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final WorkspaceRepository workspaceRepository;
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public AuthServiceImpl(UserRepository userRepository,
                            RefreshTokenRepository refreshTokenRepository,
+                           WorkspaceRepository workspaceRepository,
+                           MemberRepository memberRepository,
                            PasswordEncoder passwordEncoder,
                            JwtService jwtService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.workspaceRepository = workspaceRepository;
+        this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
@@ -45,10 +57,20 @@ public class AuthServiceImpl implements AuthService {
         user.setName(request.name());
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
-
         user = userRepository.save(user);
 
-        return generateTokenResponse(user);
+        Workspace workspace = new Workspace();
+        workspace.setName(request.workspaceName());
+        workspace = workspaceRepository.save(workspace);
+
+        Member member = new Member();
+        member.setUser(user);
+        member.setWorkspace(workspace);
+        member.setRole(MemberRole.OWNER);
+        member.setPosition(MemberPosition.DIRETOR_DE_ARTE);
+        member = memberRepository.save(member);
+
+        return generateTokenResponse(user, member);
     }
 
     private static final String DUMMY_HASH = "$2a$10$dummyhashtoequalizetimingfornonexistentusers00000000000";
@@ -71,7 +93,8 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Credenciais invalidas");
         }
 
-        return generateTokenResponse(user);
+        Member member = memberRepository.findFirstByUserId(user.getId()).orElse(null);
+        return generateTokenResponse(user, member);
     }
 
     @Override
@@ -89,7 +112,8 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
 
         User user = refreshToken.getUser();
-        return generateTokenResponse(user);
+        Member member = memberRepository.findFirstByUserId(user.getId()).orElse(null);
+        return generateTokenResponse(user, member);
     }
 
     @Override
@@ -102,9 +126,11 @@ public class AuthServiceImpl implements AuthService {
                 });
     }
 
-    private TokenResponseDTO generateTokenResponse(User user) {
+    private TokenResponseDTO generateTokenResponse(User user, Member member) {
         refreshTokenRepository.revokeAllByUserId(user.getId());
-        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
+
+        Long workspaceId = member != null ? member.getWorkspace().getId() : null;
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), workspaceId);
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
@@ -112,7 +138,25 @@ public class AuthServiceImpl implements AuthService {
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshTokenRepository.save(refreshToken);
 
-        UserInfoDTO userInfo = new UserInfoDTO(user.getId(), user.getName(), user.getEmail(), null, null, null, null);
+        UserInfoDTO userInfo;
+        if (member != null) {
+            userInfo = new UserInfoDTO(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    member.getWorkspace().getId(),
+                    member.getWorkspace().getName(),
+                    member.getRole().name(),
+                    member.getPosition().name()
+            );
+        } else {
+            userInfo = new UserInfoDTO(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    null, null, null, null
+            );
+        }
 
         return new TokenResponseDTO(
                 accessToken,
