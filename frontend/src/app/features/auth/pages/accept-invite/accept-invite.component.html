@@ -1,0 +1,79 @@
+@if (loadingInfo()) {
+  <div class="flex items-center justify-center py-12">
+    <i class="pi pi-spin pi-spinner text-[24px] text-indigo-500"></i>
+  </div>
+} @else if (errorMessage() && !inviteInfo()) {
+  <div class="text-center py-12">
+    <i class="pi pi-exclamation-triangle text-[48px] text-red-400 mb-4"></i>
+    <p class="text-[16px] font-medium text-gray-900">{{ errorMessage() }}</p>
+    <p class="mt-2 text-[14px] text-gray-500">O link pode ter expirado ou já foi utilizado.</p>
+  </div>
+} @else if (inviteInfo()) {
+  <div>
+    <!-- Invite info panel -->
+    <div class="mb-6 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+      <h2 class="text-[14px] font-medium text-indigo-900 mb-3">Você foi convidado para</h2>
+      <div class="space-y-2 text-[13px]">
+        <div class="flex justify-between">
+          <span class="text-indigo-600">Workspace</span>
+          <span class="font-medium text-indigo-900">{{ inviteInfo()!.workspaceName }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-indigo-600">Papel</span>
+          <span class="font-medium text-indigo-900">{{ roleLabels[inviteInfo()!.role] ?? inviteInfo()!.role }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-indigo-600">Cargo</span>
+          <span class="font-medium text-indigo-900">{{ positionLabels[inviteInfo()!.position] ?? inviteInfo()!.position }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-indigo-600">Convidado por</span>
+          <span class="font-medium text-indigo-900">{{ inviteInfo()!.invitedByName }}</span>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="text-[22px] font-semibold tracking-tight text-gray-900">
+      {{ inviteInfo()!.userExists ? 'Entrar e aceitar convite' : 'Criar conta e aceitar convite' }}
+    </h1>
+
+    @if (errorMessage()) {
+      <div class="mt-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-[13px] text-red-700">
+        <i class="pi pi-exclamation-circle mt-0.5 text-red-400" style="font-size: 14px"></i>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-6 space-y-5">
+      <div>
+        <label class="mb-1.5 block text-[13px] font-medium text-gray-700">Email</label>
+        <input pInputText [value]="inviteInfo()!.email" readonly class="w-full bg-gray-50" />
+      </div>
+
+      @if (!inviteInfo()!.userExists) {
+        <div>
+          <label for="invite-name" class="mb-1.5 block text-[13px] font-medium text-gray-700">Nome completo</label>
+          <input pInputText id="invite-name" formControlName="name" placeholder="Seu nome" class="w-full" />
+          @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+            <small class="mt-1 block text-[12px] text-red-500">Nome é obrigatório</small>
+          }
+        </div>
+      }
+
+      <div>
+        <label for="invite-password" class="mb-1.5 block text-[13px] font-medium text-gray-700">Senha</label>
+        <p-password id="invite-password" formControlName="password" [feedback]="false" [toggleMask]="true" styleClass="w-full" inputStyleClass="w-full" />
+        @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+          <small class="mt-1 block text-[12px] text-red-500">Senha é obrigatória</small>
+        }
+        @if (form.controls.password.touched && form.controls.password.hasError('minlength')) {
+          <small class="mt-1 block text-[12px] text-red-500">Mínimo de 8 caracteres</small>
+        }
+      </div>
+
+      <p-button type="submit"
+                [label]="inviteInfo()!.userExists ? 'Aceitar convite e entrar' : 'Aceitar convite e criar conta'"
+                [loading]="loading()" [disabled]="form.invalid || loading()" styleClass="w-full !mt-7" />
+    </form>
+  </div>
+}
