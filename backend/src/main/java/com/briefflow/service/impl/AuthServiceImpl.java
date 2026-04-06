@@ -51,11 +51,17 @@ public class AuthServiceImpl implements AuthService {
         return generateTokenResponse(user);
     }
 
+    private static final String DUMMY_HASH = "$2a$10$dummyhashtoequalizetimingfornonexistentusers00000000000";
+
     @Override
     @Transactional
     public TokenResponseDTO login(LoginRequestDTO request) {
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UnauthorizedException("Credenciais invalidas"));
+        User user = userRepository.findByEmail(request.email()).orElse(null);
+
+        if (user == null) {
+            passwordEncoder.matches(request.password(), DUMMY_HASH);
+            throw new UnauthorizedException("Credenciais invalidas");
+        }
 
         if (!user.isActive()) {
             throw new UnauthorizedException("Conta desativada");
@@ -97,6 +103,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private TokenResponseDTO generateTokenResponse(User user) {
+        refreshTokenRepository.revokeAllByUserId(user.getId());
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
 
         RefreshToken refreshToken = new RefreshToken();

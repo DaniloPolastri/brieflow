@@ -23,6 +23,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         com.briefflow.entity.User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        return new User(user.getEmail(), user.getPassword(), Collections.emptyList());
+        return User.builder()
+                .username(user.getEmail())
+                .password(user.getPassword())
+                .disabled(!user.isActive())
+                .authorities(Collections.emptyList())
+                .build();
     }
 }

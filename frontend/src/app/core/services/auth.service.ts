@@ -13,7 +13,7 @@ export class AuthService {
   private readonly storage = inject(StorageService);
 
   private readonly apiUrl = `${environment.apiUrl}/api/v1/auth`;
-  private readonly _currentUser = signal<User | null>(null);
+  private readonly _currentUser = signal<User | null>(this.storage.getUser());
 
   readonly currentUser = this._currentUser.asReadonly();
   readonly isLoggedIn = computed(() => this._currentUser() !== null);
@@ -56,6 +56,7 @@ export class AuthService {
   private handleAuthResponse(response: TokenResponse): void {
     this.storage.setAccessToken(response.accessToken);
     this.storage.setRefreshToken(response.refreshToken);
+    this.storage.setUser(response.user);
     this._currentUser.set(response.user);
   }
 }

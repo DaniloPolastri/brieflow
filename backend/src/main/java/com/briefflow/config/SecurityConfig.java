@@ -1,6 +1,7 @@
 package com.briefflow.config;
 
 import com.briefflow.security.JwtFilter;
+import com.briefflow.security.JwtService;
 import com.briefflow.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +10,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,17 +22,23 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
-    private final JwtFilter jwtFilter;
-    private final RateLimitFilter rateLimitFilter;
 
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource, JwtFilter jwtFilter, RateLimitFilter rateLimitFilter) {
+    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
         this.corsConfigurationSource = corsConfigurationSource;
-        this.jwtFilter = jwtFilter;
-        this.rateLimitFilter = rateLimitFilter;
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public JwtFilter jwtFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+        return new JwtFilter(jwtService, userDetailsService);
+    }
+
+    @Bean
+    public RateLimitFilter rateLimitFilter() {
+        return new RateLimitFilter();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter, RateLimitFilter rateLimitFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(csrf -> csrf.disable())

@@ -7,14 +7,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final ConcurrentHashMap<String, Bucket> buckets = new ConcurrentHashMap<>();
@@ -44,7 +42,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private boolean isRateLimited(String path) {
-        return path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/auth/register");
+        return path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/auth/register") || path.startsWith("/api/v1/auth/refresh");
     }
 
     private Bucket createBucket() {

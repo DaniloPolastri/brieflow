@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
+import { User } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class StorageService {
   private readonly ACCESS_TOKEN_KEY = 'bf_access_token';
   private readonly REFRESH_TOKEN_KEY = 'bf_refresh_token';
+  private readonly USER_KEY = 'bf_user';
 
   getAccessToken(): string | null {
     return localStorage.getItem(this.ACCESS_TOKEN_KEY);
@@ -21,8 +23,18 @@ export class StorageService {
     localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
   }
 
+  getUser(): User | null {
+    const data = localStorage.getItem(this.USER_KEY);
+    return data ? JSON.parse(data) : null;
+  }
+
+  setUser(user: User): void {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  }
+
   clear(): void {
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
   }
 }
