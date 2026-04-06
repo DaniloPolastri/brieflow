@@ -7,9 +7,11 @@ import com.briefflow.entity.Workspace;
 import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
+import com.briefflow.mapper.WorkspaceMapper;
 import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.WorkspaceRepository;
 import com.briefflow.service.impl.WorkspaceServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,8 +33,19 @@ class WorkspaceServiceImplTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private WorkspaceMapper workspaceMapper;
+
     @InjectMocks
     private WorkspaceServiceImpl workspaceService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(workspaceMapper.toResponseDTO(any(Workspace.class))).thenAnswer(inv -> {
+            Workspace w = inv.getArgument(0);
+            return new WorkspaceResponseDTO(w.getId(), w.getName(), w.getSlug());
+        });
+    }
 
     @Test
     void should_getWorkspace_when_exists() {

@@ -36,6 +36,7 @@ public class MemberServiceImpl implements MemberService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final MemberMapper memberMapper;
     private final String frontendUrl;
 
     public MemberServiceImpl(MemberRepository memberRepository,
@@ -45,6 +46,7 @@ public class MemberServiceImpl implements MemberService {
                              JwtService jwtService,
                              PasswordEncoder passwordEncoder,
                              RefreshTokenRepository refreshTokenRepository,
+                             MemberMapper memberMapper,
                              @Value("${app.frontend-url}") String frontendUrl) {
         this.memberRepository = memberRepository;
         this.inviteTokenRepository = inviteTokenRepository;
@@ -53,6 +55,7 @@ public class MemberServiceImpl implements MemberService {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.memberMapper = memberMapper;
         this.frontendUrl = frontendUrl;
     }
 
@@ -62,15 +65,7 @@ public class MemberServiceImpl implements MemberService {
         List<InviteToken> pendingInvites = inviteTokenRepository.findByWorkspaceIdAndUsedFalse(workspaceId);
 
         List<MemberResponseDTO> memberDTOs = members.stream()
-                .map(m -> new MemberResponseDTO(
-                        m.getId(),
-                        m.getUser().getId(),
-                        m.getUser().getName(),
-                        m.getUser().getEmail(),
-                        m.getRole().name(),
-                        m.getPosition().name(),
-                        m.getCreatedAt().format(ISO_FORMATTER)
-                ))
+                .map(memberMapper::toResponseDTO)
                 .toList();
 
         List<InviteTokenResponseDTO> inviteDTOs = pendingInvites.stream()

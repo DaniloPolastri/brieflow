@@ -9,9 +9,11 @@ import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
 import com.briefflow.exception.UnauthorizedException;
+import com.briefflow.mapper.MemberMapper;
 import com.briefflow.repository.*;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.impl.MemberServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,9 +39,26 @@ class MemberServiceImplTest {
     @Mock private JwtService jwtService;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private RefreshTokenRepository refreshTokenRepository;
+    @Mock private MemberMapper memberMapper;
 
     @InjectMocks
     private MemberServiceImpl memberService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(memberMapper.toResponseDTO(any(Member.class))).thenAnswer(inv -> {
+            Member m = inv.getArgument(0);
+            return new MemberResponseDTO(
+                    m.getId(),
+                    m.getUser().getId(),
+                    m.getUser().getName(),
+                    m.getUser().getEmail(),
+                    m.getRole().name(),
+                    m.getPosition().name(),
+                    m.getCreatedAt().toString()
+            );
+        });
+    }
 
     // --- listMembers ---
 
