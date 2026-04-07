@@ -8,6 +8,7 @@ import com.briefflow.entity.Workspace;
 import com.briefflow.enums.MemberPosition;
 import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.BusinessException;
+import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.UnauthorizedException;
 import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.RefreshTokenRepository;
@@ -93,7 +94,8 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Credenciais invalidas");
         }
 
-        Member member = memberRepository.findFirstByUserId(user.getId()).orElse(null);
+        Member member = memberRepository.findFirstByUserId(user.getId())
+                .orElseThrow(() -> new ForbiddenException("Sua conta nao esta vinculada a nenhum workspace"));
         return generateTokenResponse(user, member);
     }
 
@@ -112,7 +114,8 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
 
         User user = refreshToken.getUser();
-        Member member = memberRepository.findFirstByUserId(user.getId()).orElse(null);
+        Member member = memberRepository.findFirstByUserId(user.getId())
+                .orElseThrow(() -> new ForbiddenException("Sua conta nao esta vinculada a nenhum workspace"));
         return generateTokenResponse(user, member);
     }
 
@@ -129,8 +132,7 @@ public class AuthServiceImpl implements AuthService {
     private TokenResponseDTO generateTokenResponse(User user, Member member) {
         refreshTokenRepository.revokeAllByUserId(user.getId());
 
-        Long workspaceId = member != null ? member.getWorkspace().getId() : null;
-        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), workspaceId);
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), member.getWorkspace().getId());
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
@@ -138,25 +140,15 @@ public class AuthServiceImpl implements AuthService {
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshTokenRepository.save(refreshToken);
 
-        UserInfoDTO userInfo;
-        if (member != null) {
-            userInfo = new UserInfoDTO(
-                    user.getId(),
-                    user.getName(),
-                    user.getEmail(),
-                    member.getWorkspace().getId(),
-                    member.getWorkspace().getName(),
-                    member.getRole().name(),
-                    member.getPosition().name()
-            );
-        } else {
-            userInfo = new UserInfoDTO(
-                    user.getId(),
-                    user.getName(),
-                    user.getEmail(),
-                    null, null, null, null
-            );
-        }
+        UserInfoDTO userInfo = new UserInfoDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                member.getWorkspace().getId(),
+                member.getWorkspace().getName(),
+                member.getRole().name(),
+                member.getPosition().name()
+        );
 
         return new TokenResponseDTO(
                 accessToken,

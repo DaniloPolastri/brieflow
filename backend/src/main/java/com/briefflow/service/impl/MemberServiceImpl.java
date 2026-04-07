@@ -165,6 +165,9 @@ public class MemberServiceImpl implements MemberService {
         }
 
         memberRepository.delete(target);
+
+        // Revoke all refresh tokens so removed user gets logged out on next refresh
+        refreshTokenRepository.revokeAllByUserId(target.getUser().getId());
     }
 
     @Override

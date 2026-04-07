@@ -8,6 +8,7 @@ import com.briefflow.entity.Workspace;
 import com.briefflow.enums.MemberPosition;
 import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.BusinessException;
+import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.UnauthorizedException;
 import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.RefreshTokenRepository;
@@ -164,6 +165,23 @@ class AuthServiceImplTest {
         when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
 
         assertThrows(UnauthorizedException.class, () -> authService.login(request));
+    }
+
+    @Test
+    void should_throwForbidden_when_loginWithNoWorkspace() {
+        LoginRequestDTO request = new LoginRequestDTO("john@test.com", "password123");
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("john@test.com");
+        user.setPassword("hashed");
+        user.setActive(true);
+
+        when(userRepository.findByEmail("john@test.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "hashed")).thenReturn(true);
+        when(memberRepository.findFirstByUserId(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ForbiddenException.class, () -> authService.login(request));
     }
 
     @Test
