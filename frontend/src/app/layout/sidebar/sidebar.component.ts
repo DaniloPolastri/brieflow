@@ -57,6 +57,7 @@ export class SidebarComponent {
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'pi pi-objects-column', route: '/dashboard' },
+    { label: 'Clientes', icon: 'pi pi-building', route: '/clients' },
     { label: 'Equipe', icon: 'pi pi-users', route: '/members' },
     { label: 'Configurações', icon: 'pi pi-cog', route: '/settings', roles: ['OWNER', 'MANAGER'] },
   ];
