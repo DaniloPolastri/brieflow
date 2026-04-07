@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MemberListComponent } from './member-list.component';
-import { MemberApiService } from '../../services/member-api.service';
-import { StorageService } from '../../../../core/services/storage.service';
+import { MemberApiService } from '@features/members/services/member-api.service';
+import { StorageService } from '@core/services/storage.service';
 import { ConfirmationService } from 'primeng/api';
 import { of } from 'rxjs';
-import { Member, InviteResponse } from '../../models/member.model';
+import { Member, InviteResponse } from '@features/members/models/member.model';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';

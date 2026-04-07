@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { InviteApiService } from './invite-api.service';
-import { environment } from '../../../../environments/environment';
+import { environment } from '@env/environment';
 import { InviteInfo, AcceptInviteRequest } from '../models/invite.model';
-import { TokenResponse } from '../../../core/models/user.model';
+import { TokenResponse } from '@core/models/user.model';
 
 describe('InviteApiService', () => {
   let service: InviteApiService;

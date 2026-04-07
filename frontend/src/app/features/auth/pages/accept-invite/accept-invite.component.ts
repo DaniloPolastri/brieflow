@@ -5,10 +5,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { InviteApiService } from '../../services/invite-api.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { InviteInfo } from '../../models/invite.model';
-import { MemberRole, MemberPosition, MEMBER_ROLE_LABELS, MEMBER_POSITION_LABELS } from '../../../members/models/member.model';
+import { InviteApiService } from '@features/auth/services/invite-api.service';
+import { AuthService } from '@core/services/auth.service';
+import { InviteInfo } from '@features/auth/models/invite.model';
+import { MemberRole, MemberPosition, MEMBER_ROLE_LABELS, MEMBER_POSITION_LABELS } from '@features/members/models/member.model';
 
 @Component({
   selector: 'app-accept-invite',

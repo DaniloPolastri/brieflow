@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, computed, signal, ElementRef, HostListener } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
-import { StorageService } from '../../core/services/storage.service';
+import { AuthService } from '@core/services/auth.service';
+import { StorageService } from '@core/services/storage.service';
 
 interface NavItem {
   label: string;

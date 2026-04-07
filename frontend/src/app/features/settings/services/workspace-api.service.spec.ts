@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { WorkspaceApiService } from './workspace-api.service';
-import { environment } from '../../../../environments/environment';
+import { environment } from '@env/environment';
 import { Workspace, UpdateWorkspaceRequest } from '../models/workspace.model';
 
 describe('WorkspaceApiService', () => {
