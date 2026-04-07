@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
-import { AuthService } from '../../../../core/services/auth.service';
+import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard',

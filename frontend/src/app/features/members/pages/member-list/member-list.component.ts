@@ -11,8 +11,8 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService } from 'primeng/api';
-import { MemberApiService } from '../../services/member-api.service';
-import { StorageService } from '../../../../core/services/storage.service';
+import { MemberApiService } from '@features/members/services/member-api.service';
+import { StorageService } from '@core/services/storage.service';
 import {
   Member,
   InviteResponse,
@@ -20,8 +20,8 @@ import {
   MEMBER_POSITION_LABELS,
   MemberRole,
   MemberPosition,
-} from '../../models/member.model';
-import { InviteMemberDialogComponent } from '../../components/invite-member-dialog/invite-member-dialog.component';
+} from '@features/members/models/member.model';
+import { InviteMemberDialogComponent } from '@features/members/components/invite-member-dialog/invite-member-dialog.component';
 
 @Component({
   selector: 'app-member-list',

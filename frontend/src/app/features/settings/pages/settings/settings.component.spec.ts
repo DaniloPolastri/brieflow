@@ -4,8 +4,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { SettingsComponent } from './settings.component';
-import { WorkspaceApiService } from '../../services/workspace-api.service';
-import { Workspace } from '../../models/workspace.model';
+import { WorkspaceApiService } from '@features/settings/services/workspace-api.service';
+import { Workspace } from '@features/settings/models/workspace.model';
 
 describe('SettingsComponent', () => {
   let workspaceApiMock: {

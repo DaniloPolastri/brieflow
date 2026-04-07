@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { environment } from '@env/environment';
 import { InviteInfo, AcceptInviteRequest } from '../models/invite.model';
-import { TokenResponse } from '../../../core/models/user.model';
+import { TokenResponse } from '@core/models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class InviteApiService {

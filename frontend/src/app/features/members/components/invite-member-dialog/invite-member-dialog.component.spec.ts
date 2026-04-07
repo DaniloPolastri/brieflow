@@ -5,8 +5,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { InviteMemberDialogComponent } from './invite-member-dialog.component';
-import { MemberApiService } from '../../services/member-api.service';
-import { InviteResponse } from '../../models/member.model';
+import { MemberApiService } from '@features/members/services/member-api.service';
+import { InviteResponse } from '@features/members/models/member.model';
 
 describe('InviteMemberDialogComponent', () => {
   let memberApiMock: { invite: ReturnType<typeof vi.fn> };

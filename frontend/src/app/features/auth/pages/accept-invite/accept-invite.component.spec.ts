@@ -2,10 +2,10 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter, ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { AcceptInviteComponent } from './accept-invite.component';
-import { InviteApiService } from '../../services/invite-api.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { InviteInfo } from '../../models/invite.model';
-import { TokenResponse } from '../../../../core/models/user.model';
+import { InviteApiService } from '@features/auth/services/invite-api.service';
+import { AuthService } from '@core/services/auth.service';
+import { InviteInfo } from '@features/auth/models/invite.model';
+import { TokenResponse } from '@core/models/user.model';
 
 const mockInviteInfoNewUser: InviteInfo = {
   workspaceName: 'Agência Criativa',

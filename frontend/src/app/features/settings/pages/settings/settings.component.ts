@@ -3,7 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { WorkspaceApiService } from '../../services/workspace-api.service';
+import { WorkspaceApiService } from '@features/settings/services/workspace-api.service';
 
 @Component({
   selector: 'app-settings',

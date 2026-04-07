@@ -11,8 +11,8 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
-import { MemberApiService } from '../../services/member-api.service';
-import { InviteMemberRequest, MemberPosition, MemberRole, MEMBER_POSITION_LABELS } from '../../models/member.model';
+import { MemberApiService } from '@features/members/services/member-api.service';
+import { InviteMemberRequest, MemberPosition, MemberRole, MEMBER_POSITION_LABELS } from '@features/members/models/member.model';
 
 @Component({
   selector: 'app-invite-member-dialog',
