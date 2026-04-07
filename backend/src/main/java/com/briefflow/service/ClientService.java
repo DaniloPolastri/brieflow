@@ -9,7 +9,7 @@ import java.util.List;
 public interface ClientService {
     ClientResponseDTO create(ClientRequestDTO dto, Long workspaceId, Long userId);
     ClientResponseDTO update(Long clientId, ClientRequestDTO dto, Long workspaceId, Long userId);
-    ClientResponseDTO getById(Long clientId, Long workspaceId);
+    ClientResponseDTO getById(Long clientId, Long workspaceId, Long userId);
     List<ClientResponseDTO> list(Long workspaceId, Long userId, String search, Boolean active);
     ClientResponseDTO toggleActive(Long clientId, Long workspaceId, Long userId);
     ClientResponseDTO uploadLogo(Long clientId, MultipartFile file, Long workspaceId, Long userId);

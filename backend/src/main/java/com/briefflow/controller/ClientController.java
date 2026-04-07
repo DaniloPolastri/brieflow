@@ -42,8 +42,9 @@ public class ClientController {
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> getById(
             @PathVariable Long id,
-            @RequestAttribute("workspaceId") Long workspaceId) {
-        return ResponseEntity.ok(clientService.getById(id, workspaceId));
+            @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId) {
+        return ResponseEntity.ok(clientService.getById(id, workspaceId, userId));
     }
 
     @PutMapping("/{id}")

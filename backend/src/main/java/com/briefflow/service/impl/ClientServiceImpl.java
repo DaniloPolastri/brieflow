@@ -64,6 +64,7 @@ public class ClientServiceImpl implements ClientService {
         Client client = clientMapper.toEntity(dto);
         client.setWorkspace(workspace);
         client.setActive(true);
+        normalizeBlankFields(client);
 
         Client saved = clientRepository.save(client);
         return clientMapper.toResponseDTO(saved);
@@ -76,14 +77,24 @@ public class ClientServiceImpl implements ClientService {
         Client client = findClientInWorkspace(clientId, workspaceId);
 
         clientMapper.updateEntity(dto, client);
+        normalizeBlankFields(client);
         Client saved = clientRepository.save(client);
         return clientMapper.toResponseDTO(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ClientResponseDTO getById(Long clientId, Long workspaceId) {
+    public ClientResponseDTO getById(Long clientId, Long workspaceId, Long userId) {
         Client client = findClientInWorkspace(clientId, workspaceId);
+
+        Member member = memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membro nao encontrado"));
+
+        if (member.getRole() == MemberRole.CREATIVE
+                && !clientMemberRepository.existsByClientIdAndMemberId(clientId, member.getId())) {
+            throw new ForbiddenException("Voce nao tem acesso a este cliente");
+        }
+
         return clientMapper.toResponseDTO(client);
     }
 
@@ -157,16 +168,20 @@ public class ClientServiceImpl implements ClientService {
         requireOwnerOrManager(userId, workspaceId);
         findClientInWorkspace(clientId, workspaceId);
 
+        // Validate all members exist in workspace before modifying
         for (Long memberId : memberIds) {
-            Member member = memberRepository.findByIdAndWorkspaceId(memberId, workspaceId)
+            memberRepository.findByIdAndWorkspaceId(memberId, workspaceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Membro nao encontrado: " + memberId));
+        }
 
-            if (!clientMemberRepository.existsByClientIdAndMemberId(clientId, memberId)) {
-                ClientMember clientMember = new ClientMember();
-                clientMember.setClientId(clientId);
-                clientMember.setMemberId(memberId);
-                clientMemberRepository.save(clientMember);
-            }
+        // Sync: delete all existing, then re-create from incoming list
+        clientMemberRepository.deleteByClientId(clientId);
+
+        for (Long memberId : memberIds) {
+            ClientMember clientMember = new ClientMember();
+            clientMember.setClientId(clientId);
+            clientMember.setMemberId(memberId);
+            clientMemberRepository.save(clientMember);
         }
     }
 
@@ -245,6 +260,18 @@ public class ClientServiceImpl implements ClientService {
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
             throw new BusinessException("Formato invalido. Apenas JPG e PNG sao permitidos");
+        }
+    }
+
+    private void normalizeBlankFields(Client client) {
+        if (client.getEmail() != null && client.getEmail().isBlank()) {
+            client.setEmail(null);
+        }
+        if (client.getPhone() != null && client.getPhone().isBlank()) {
+            client.setPhone(null);
+        }
+        if (client.getCompany() != null && client.getCompany().isBlank()) {
+            client.setCompany(null);
         }
     }
 

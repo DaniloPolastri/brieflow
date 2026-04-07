@@ -98,6 +98,33 @@ class ClientServiceImplTest {
     }
 
     @Test
+    void should_normalizeBlankFieldsToNull_when_creating() {
+        User user = createUser(1L, "Owner", "owner@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
+        ClientRequestDTO dto = new ClientRequestDTO("Acme Corp", "", "  ", "");
+
+        Client entity = new Client();
+        entity.setId(1L);
+        entity.setName("Acme Corp");
+        entity.setCompany("");
+        entity.setEmail("  ");
+        entity.setPhone("");
+        entity.setActive(true);
+        entity.setWorkspace(workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
+        when(workspaceRepository.findById(1L)).thenReturn(Optional.of(workspace));
+        when(clientMapper.toEntity(dto)).thenReturn(entity);
+        when(clientRepository.save(any(Client.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        clientService.create(dto, 1L, 1L);
+
+        verify(clientRepository).save(argThat(c ->
+                c.getCompany() == null && c.getEmail() == null && c.getPhone() == null));
+    }
+
+    @Test
     void should_throwForbidden_when_creativeCreatesClient() {
         User user = createUser(1L, "Creative", "creative@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
@@ -151,23 +178,57 @@ class ClientServiceImplTest {
     // --- getById ---
 
     @Test
-    void should_getClientById_when_existsInWorkspace() {
+    void should_getClientById_when_ownerRequests() {
+        User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
         Client client = createClient(1L, "Acme Corp", workspace);
 
         when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
 
-        ClientResponseDTO result = clientService.getById(1L, 1L);
+        ClientResponseDTO result = clientService.getById(1L, 1L, 1L);
 
         assertNotNull(result);
         assertEquals("Acme Corp", result.name());
     }
 
     @Test
+    void should_getClientById_when_creativeIsAssigned() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+        when(clientMemberRepository.existsByClientIdAndMemberId(1L, 5L)).thenReturn(true);
+
+        ClientResponseDTO result = clientService.getById(1L, 1L, 2L);
+
+        assertNotNull(result);
+        assertEquals("Acme Corp", result.name());
+    }
+
+    @Test
+    void should_throwForbidden_when_creativeNotAssignedToClient() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+        when(clientMemberRepository.existsByClientIdAndMemberId(1L, 5L)).thenReturn(false);
+
+        assertThrows(ForbiddenException.class, () -> clientService.getById(1L, 1L, 2L));
+    }
+
+    @Test
     void should_throwNotFound_when_clientNotInWorkspace() {
         when(clientRepository.findByIdAndWorkspaceId(99L, 1L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> clientService.getById(99L, 1L));
+        assertThrows(ResourceNotFoundException.class, () -> clientService.getById(99L, 1L, 1L));
     }
 
     // --- list ---
@@ -534,16 +595,16 @@ class ClientServiceImplTest {
         when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(ownerMember));
         when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
         when(memberRepository.findByIdAndWorkspaceId(5L, 1L)).thenReturn(Optional.of(creativeMember));
-        when(clientMemberRepository.existsByClientIdAndMemberId(1L, 5L)).thenReturn(false);
 
         clientService.assignMembers(1L, List.of(5L), 1L, 1L);
 
+        verify(clientMemberRepository).deleteByClientId(1L);
         verify(clientMemberRepository).save(argThat(cm ->
                 cm.getClientId().equals(1L) && cm.getMemberId().equals(5L)));
     }
 
     @Test
-    void should_skipDuplicate_when_memberAlreadyAssigned() {
+    void should_syncMembers_when_reassigning() {
         User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
         Member ownerMember = createMember(1L, user, workspace, MemberRole.OWNER);
@@ -555,11 +616,12 @@ class ClientServiceImplTest {
         when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(ownerMember));
         when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
         when(memberRepository.findByIdAndWorkspaceId(5L, 1L)).thenReturn(Optional.of(creativeMember));
-        when(clientMemberRepository.existsByClientIdAndMemberId(1L, 5L)).thenReturn(true);
 
         clientService.assignMembers(1L, List.of(5L), 1L, 1L);
 
-        verify(clientMemberRepository, never()).save(any());
+        // Sync pattern: always deletes all existing then re-creates
+        verify(clientMemberRepository).deleteByClientId(1L);
+        verify(clientMemberRepository).save(any(ClientMember.class));
     }
 
     @Test
@@ -587,6 +649,9 @@ class ClientServiceImplTest {
 
         assertThrows(ResourceNotFoundException.class, () ->
                 clientService.assignMembers(1L, List.of(99L), 1L, 1L));
+
+        // Should not delete existing assignments when validation fails
+        verify(clientMemberRepository, never()).deleteByClientId(anyLong());
     }
 
     // --- unassignMember ---

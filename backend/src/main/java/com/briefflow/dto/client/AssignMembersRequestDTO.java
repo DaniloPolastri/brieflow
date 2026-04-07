@@ -6,5 +6,5 @@ import java.util.List;
 
 public record AssignMembersRequestDTO(
     @NotNull(message = "Lista de membros e obrigatoria")
-    List<Long> memberIds
+    List<@NotNull Long> memberIds
 ) {}
