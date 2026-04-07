@@ -25,6 +25,10 @@
 - [x] Task F3: ClientFormDialogComponent + Tests (depends on F1) — **invoke `frontend-design` before template**
 - [x] Task F4: ClientListComponent + Tests (depends on F1, F2, F3) — **invoke `frontend-design` before template**
 
+### Client-Member Assignment (added post-plan)
+- [x] Task B6: Migration V7 + ClientMember entity + repository + service + controller + tests
+- [ ] Task F5: Frontend — update model, service, and UI for member assignment
+
 Nenhuma task frontend-backend paralelizável — backend deve estar pronto antes do frontend consumir.
 
 ---
