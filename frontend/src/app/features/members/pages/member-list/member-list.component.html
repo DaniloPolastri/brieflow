@@ -4,7 +4,7 @@
       <h1 class="text-[22px] font-semibold tracking-tight text-gray-900">Equipe</h1>
       <p class="mt-1 text-[14px] text-gray-500">Gerencie os membros do seu workspace.</p>
     </div>
-    @if (canManage()) {
+    @if (canManage) {
       <p-button label="Convidar membro" icon="pi pi-plus" (onClick)="showInviteDialog.set(true)" />
     }
   </div>
@@ -34,7 +34,7 @@
         <td class="text-[13px] text-gray-700">{{ getPositionLabel(member.position) }}</td>
         <td><p-tag [value]="getRoleLabel(member.role)" [severity]="getRoleSeverity(member.role)" /></td>
         <td>
-          @if (canManage() && member.role !== 'OWNER') {
+          @if (canManage && member.role !== 'OWNER') {
             <p-button icon="pi pi-trash" [text]="true" severity="danger" (onClick)="removeMember(member)" />
           }
         </td>
@@ -62,7 +62,7 @@
                         [pTooltip]="copiedInviteId() === invite.id ? 'Copiado!' : 'Copiar link'"
                         tooltipPosition="top"
                         (onClick)="copyInviteLink(invite)" />
-              @if (canManage()) {
+              @if (canManage) {
                 <p-button icon="pi pi-times"
                           [text]="true"
                           severity="danger"

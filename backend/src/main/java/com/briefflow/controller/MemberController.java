@@ -1,6 +1,7 @@
 package com.briefflow.controller;
 
 import com.briefflow.dto.member.*;
+import com.briefflow.service.InviteService;
 import com.briefflow.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -12,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
+    private final InviteService inviteService;
 
-    public MemberController(MemberService memberService) {
+    public MemberController(MemberService memberService, InviteService inviteService) {
         this.memberService = memberService;
+        this.inviteService = inviteService;
     }
 
     @GetMapping
@@ -27,7 +30,7 @@ public class MemberController {
             @RequestAttribute("workspaceId") Long workspaceId,
             @RequestAttribute("userId") Long userId,
             @Valid @RequestBody InviteMemberRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(memberService.inviteMember(workspaceId, userId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(inviteService.inviteMember(workspaceId, userId, request));
     }
 
     @DeleteMapping("/{id}")
@@ -44,7 +47,7 @@ public class MemberController {
             @RequestAttribute("workspaceId") Long workspaceId,
             @RequestAttribute("userId") Long userId,
             @PathVariable Long id) {
-        memberService.cancelInvite(workspaceId, userId, id);
+        inviteService.cancelInvite(workspaceId, userId, id);
         return ResponseEntity.noContent().build();
     }
 

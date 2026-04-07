@@ -59,6 +59,7 @@ class AuthServiceImplTest {
         workspace.setId(1L);
         workspace.setName("Workspace John");
         workspace.setSlug("workspace-john");
+        when(workspaceRepository.existsBySlug("workspace-john")).thenReturn(false);
         when(workspaceRepository.save(any(Workspace.class))).thenReturn(workspace);
 
         when(memberRepository.save(any(Member.class))).thenAnswer(inv -> {

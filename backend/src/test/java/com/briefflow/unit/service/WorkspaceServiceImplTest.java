@@ -83,6 +83,7 @@ class WorkspaceServiceImplTest {
 
         when(memberRepository.findByUserIdAndWorkspaceId(10L, 1L)).thenReturn(Optional.of(caller));
         when(workspaceRepository.findById(1L)).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.existsBySlug("new-name")).thenReturn(false);
         when(workspaceRepository.save(any(Workspace.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");
@@ -90,6 +91,7 @@ class WorkspaceServiceImplTest {
 
         assertNotNull(result);
         assertEquals("New Name", result.name());
+        assertEquals("new-name", result.slug());
         verify(workspaceRepository).save(workspace);
     }
 
@@ -105,6 +107,7 @@ class WorkspaceServiceImplTest {
 
         when(memberRepository.findByUserIdAndWorkspaceId(20L, 1L)).thenReturn(Optional.of(caller));
         when(workspaceRepository.findById(1L)).thenReturn(Optional.of(workspace));
+        when(workspaceRepository.existsBySlug("new-name")).thenReturn(false);
         when(workspaceRepository.save(any(Workspace.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateWorkspaceRequestDTO request = new UpdateWorkspaceRequestDTO("New Name");

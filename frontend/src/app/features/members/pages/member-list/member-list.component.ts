@@ -3,7 +3,6 @@ import {
   Component,
   inject,
   signal,
-  computed,
   OnInit,
 } from '@angular/core';
 import { TableModule } from 'primeng/table';
@@ -44,10 +43,7 @@ export class MemberListComponent implements OnInit {
 
   readonly copiedInviteId = signal<number | null>(null);
   readonly currentUser = this.storage.getUser();
-  readonly canManage = computed(() => {
-    const role = this.currentUser?.role;
-    return role === 'OWNER' || role === 'MANAGER';
-  });
+  readonly canManage = this.currentUser?.role === 'OWNER' || this.currentUser?.role === 'MANAGER';
 
   ngOnInit(): void {
     this.loadMembers();

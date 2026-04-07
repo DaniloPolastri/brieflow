@@ -17,7 +17,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByIdAndWorkspaceId(Long id, Long workspaceId);
     boolean existsByUserIdAndWorkspaceId(Long userId, Long workspaceId);
 
-    @Query("SELECT m FROM Member m WHERE m.user.id = :userId ORDER BY m.createdAt ASC")
+    // MVP: single workspace per user. Returns oldest membership.
+    @Query(value = "SELECT m.* FROM members m WHERE m.user_id = :userId ORDER BY m.created_at ASC LIMIT 1", nativeQuery = true)
     Optional<Member> findFirstByUserId(Long userId);
 
     long countByWorkspaceIdAndRole(Long workspaceId, MemberRole role);

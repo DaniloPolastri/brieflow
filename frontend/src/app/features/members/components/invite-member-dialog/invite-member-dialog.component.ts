@@ -12,7 +12,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { MemberApiService } from '../../services/member-api.service';
-import { MEMBER_POSITION_LABELS } from '../../models/member.model';
+import { InviteMemberRequest, MemberPosition, MemberRole, MEMBER_POSITION_LABELS } from '../../models/member.model';
 
 @Component({
   selector: 'app-invite-member-dialog',
@@ -55,8 +55,14 @@ export class InviteMemberDialogComponent {
 
     const { email, role, position } = this.form.getRawValue();
 
+    const request: InviteMemberRequest = {
+      email,
+      role: role as MemberRole,
+      position: position as MemberPosition,
+    };
+
     this.memberApi
-      .invite({ email, role: role as any, position: position as any })
+      .invite(request)
       .subscribe({
         next: (response) => {
           this.inviteLink.set(response.inviteLink);

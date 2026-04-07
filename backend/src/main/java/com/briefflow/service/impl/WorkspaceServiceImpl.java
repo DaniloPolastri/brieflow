@@ -49,6 +49,20 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workspace nao encontrado"));
         workspace.setName(request.name());
+
+        String baseSlug = Workspace.generateSlug(request.name());
+        String slug = baseSlug;
+        int suffix = 2;
+        while (workspaceRepository.existsBySlug(slug)) {
+            // Skip if the existing slug belongs to this same workspace
+            Workspace existing = workspaceRepository.findBySlug(slug).orElse(null);
+            if (existing != null && existing.getId().equals(workspaceId)) {
+                break;
+            }
+            slug = baseSlug + "-" + suffix++;
+        }
+        workspace.setSlug(slug);
+
         workspace = workspaceRepository.save(workspace);
         return workspaceMapper.toResponseDTO(workspace);
     }

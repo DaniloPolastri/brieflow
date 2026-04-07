@@ -35,20 +35,14 @@ public class Workspace {
     public void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (slug == null && name != null) {
-            slug = generateSlug(name);
-        }
     }
 
     @PreUpdate
     public void onUpdate() {
         updatedAt = LocalDateTime.now();
-        if (name != null) {
-            slug = generateSlug(name);
-        }
     }
 
-    String generateSlug(String name) {
+    public static String generateSlug(String name) {
         String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
         return normalized.toLowerCase()
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")

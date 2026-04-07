@@ -1,8 +1,8 @@
 package com.briefflow.dto.member;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public record UpdateMemberRoleRequestDTO(
-    @NotNull(message = "Papel e obrigatorio")
+    @NotBlank(message = "Papel e obrigatorio")
     String role
 ) {}

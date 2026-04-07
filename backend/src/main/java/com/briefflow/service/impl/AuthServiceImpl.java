@@ -62,6 +62,15 @@ public class AuthServiceImpl implements AuthService {
 
         Workspace workspace = new Workspace();
         workspace.setName(request.workspaceName());
+
+        String baseSlug = Workspace.generateSlug(request.workspaceName());
+        String slug = baseSlug;
+        int suffix = 2;
+        while (workspaceRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + suffix++;
+        }
+        workspace.setSlug(slug);
+
         workspace = workspaceRepository.save(workspace);
 
         Member member = new Member();

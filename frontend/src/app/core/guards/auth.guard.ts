@@ -20,7 +20,8 @@ export const authGuard: CanActivateFn = () => {
     return router.createUrlTree(['/auth/login']);
   }
 
-  // On first load (page refresh), validate session by refreshing the token
+  // Validates session once on page load. Subsequent protection relies on
+  // the auth interceptor catching 403 responses on API calls.
   if (!sessionValidated) {
     sessionValidated = true;
 

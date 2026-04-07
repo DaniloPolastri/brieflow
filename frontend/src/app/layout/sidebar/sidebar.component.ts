@@ -42,6 +42,8 @@ export class SidebarComponent {
   readonly userRole = computed(() => this.currentUser()?.role ?? '');
   readonly showUserMenu = signal(false);
 
+  // Global click listener to close user menu when clicking outside.
+  // Acceptable for sidebar (always mounted). Consider CDK overlay for reusable popovers.
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (this.showUserMenu() && !this.elRef.nativeElement.querySelector('.user-menu-area')?.contains(event.target)) {
