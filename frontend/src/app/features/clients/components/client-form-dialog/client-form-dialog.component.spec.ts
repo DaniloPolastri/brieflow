@@ -5,6 +5,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ClientFormDialogComponent } from './client-form-dialog.component';
 import { ClientApiService } from '@features/clients/services/client-api.service';
+import { MemberApiService } from '@features/members/services/member-api.service';
 
 describe('ClientFormDialogComponent', () => {
   let clientApiMock: {
@@ -12,6 +13,11 @@ describe('ClientFormDialogComponent', () => {
     update: ReturnType<typeof vi.fn>;
     uploadLogo: ReturnType<typeof vi.fn>;
     removeLogo: ReturnType<typeof vi.fn>;
+    assignMembers: ReturnType<typeof vi.fn>;
+    getAssignedMembers: ReturnType<typeof vi.fn>;
+  };
+  let memberApiMock: {
+    list: ReturnType<typeof vi.fn>;
   };
 
   const mockClient = {
@@ -31,6 +37,11 @@ describe('ClientFormDialogComponent', () => {
       update: vi.fn(),
       uploadLogo: vi.fn(),
       removeLogo: vi.fn(),
+      assignMembers: vi.fn().mockReturnValue(of(undefined)),
+      getAssignedMembers: vi.fn().mockReturnValue(of([])),
+    };
+    memberApiMock = {
+      list: vi.fn().mockReturnValue(of({ members: [], pendingInvites: [] })),
     };
 
     await TestBed.configureTestingModule({
@@ -39,6 +50,7 @@ describe('ClientFormDialogComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: ClientApiService, useValue: clientApiMock },
+        { provide: MemberApiService, useValue: memberApiMock },
       ],
     }).compileComponents();
   });
@@ -191,5 +203,63 @@ describe('ClientFormDialogComponent', () => {
 
     expect(component.logoFile()).toBeNull();
     expect(component.errorMessage()).toBe('Arquivo muito grande. Máximo 2MB.');
+  });
+
+  it('should call assignMembers on submit in edit mode', () => {
+    clientApiMock.update.mockReturnValue(of(mockClient));
+    clientApiMock.assignMembers.mockReturnValue(of(undefined));
+
+    const fixture = TestBed.createComponent(ClientFormDialogComponent);
+    const component = fixture.componentInstance;
+
+    fixture.componentRef.setInput('client', mockClient);
+    fixture.detectChanges();
+
+    component.selectedMemberIds = [2, 3];
+    component.form.patchValue({ name: 'Acme Corp' });
+    fixture.detectChanges();
+
+    component.onSubmit();
+
+    expect(clientApiMock.update).toHaveBeenCalled();
+    expect(clientApiMock.assignMembers).toHaveBeenCalledWith(1, [2, 3]);
+  });
+
+  it('should reset member state on hide', () => {
+    const fixture = TestBed.createComponent(ClientFormDialogComponent);
+    const component = fixture.componentInstance;
+
+    component.availableMembers.set([{ label: 'John', value: 1 }]);
+    component.selectedMemberIds = [1];
+    fixture.detectChanges();
+
+    component.onHide();
+    fixture.detectChanges();
+
+    expect(component.availableMembers()).toEqual([]);
+    expect(component.selectedMemberIds).toEqual([]);
+  });
+
+  it('should filter out OWNER from available members', () => {
+    const membersResponse = {
+      members: [
+        { id: 1, userId: 1, userName: 'Owner', userEmail: 'o@t.com', role: 'OWNER', position: 'ATENDIMENTO', createdAt: '' },
+        { id: 2, userId: 2, userName: 'Manager', userEmail: 'm@t.com', role: 'MANAGER', position: 'SOCIAL_MEDIA', createdAt: '' },
+        { id: 3, userId: 3, userName: 'Creative', userEmail: 'c@t.com', role: 'CREATIVE', position: 'DESIGNER_GRAFICO', createdAt: '' },
+      ],
+      pendingInvites: [],
+    };
+    memberApiMock.list.mockReturnValue(of(membersResponse));
+    clientApiMock.getAssignedMembers.mockReturnValue(of([2]));
+
+    const fixture = TestBed.createComponent(ClientFormDialogComponent);
+    const component = fixture.componentInstance;
+
+    fixture.componentRef.setInput('client', mockClient);
+    fixture.detectChanges();
+
+    expect(component.availableMembers().length).toBe(2);
+    expect(component.availableMembers().find(m => m.label === 'Owner')).toBeUndefined();
+    expect(component.selectedMemberIds).toEqual([2]);
   });
 });

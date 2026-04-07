@@ -124,4 +124,33 @@ describe('ClientApiService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('should assign members to a client', () => {
+    const memberIds = [2, 3, 5];
+
+    service.assignMembers(1, memberIds).subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/1/members`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ memberIds });
+    req.flush(null);
+  });
+
+  it('should unassign a member from a client', () => {
+    service.unassignMember(1, 3).subscribe();
+
+    const req = httpMock.expectOne(`${baseUrl}/1/members/3`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
+
+  it('should get assigned members for a client', () => {
+    const memberIds = [2, 5];
+
+    service.getAssignedMembers(1).subscribe(res => expect(res).toEqual(memberIds));
+
+    const req = httpMock.expectOne(`${baseUrl}/1/members`);
+    expect(req.request.method).toBe('GET');
+    req.flush(memberIds);
+  });
 });

@@ -49,6 +49,25 @@
       <input pInputText id="client-phone" formControlName="phone" placeholder="(11) 99999-9999" class="w-full" />
     </div>
 
+    <!-- Members (edit mode only) -->
+    @if (isEdit()) {
+      <div>
+        <label class="mb-1.5 block text-[14px] font-medium text-gray-700">Membros vinculados</label>
+        <p-multiSelect
+          [options]="availableMembers()"
+          [(ngModel)]="selectedMemberIds"
+          [ngModelOptions]="{standalone: true}"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecione membros..."
+          [filter]="true"
+          filterPlaceholder="Buscar membro..."
+          styleClass="w-full"
+          display="chip"
+        />
+      </div>
+    }
+
     <!-- Error message -->
     @if (errorMessage()) {
       <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-700">

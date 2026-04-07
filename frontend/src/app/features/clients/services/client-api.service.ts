@@ -41,4 +41,16 @@ export class ClientApiService {
   removeLogo(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}/logo`);
   }
+
+  assignMembers(clientId: number, memberIds: number[]): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${clientId}/members`, { memberIds });
+  }
+
+  unassignMember(clientId: number, memberId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${clientId}/members/${memberId}`);
+  }
+
+  getAssignedMembers(clientId: number): Observable<number[]> {
+    return this.http.get<number[]>(`${this.baseUrl}/${clientId}/members`);
+  }
 }

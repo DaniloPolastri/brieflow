@@ -9,12 +9,15 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ClientApiService } from '@features/clients/services/client-api.service';
 import { Client, ClientRequest } from '@features/clients/models/client.model';
+import { MemberApiService } from '@features/members/services/member-api.service';
+import { forkJoin } from 'rxjs';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -22,7 +25,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 @Component({
   selector: 'app-client-form-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, DialogModule, InputTextModule, ButtonModule],
+  imports: [ReactiveFormsModule, FormsModule, DialogModule, InputTextModule, ButtonModule, MultiSelectModule],
   templateUrl: './client-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -32,12 +35,15 @@ export class ClientFormDialogComponent {
   readonly saved = output<void>();
 
   private readonly clientApi = inject(ClientApiService);
+  private readonly memberApi = inject(MemberApiService);
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(false);
   readonly logoFile = signal<File | null>(null);
   readonly logoPreview = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
+  readonly availableMembers = signal<{ label: string; value: number }[]>([]);
+  selectedMemberIds: number[] = [];
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -60,7 +66,26 @@ export class ClientFormDialogComponent {
           phone: c.phone ?? '',
         });
         this.logoPreview.set(c.logoUrl);
+        this.loadMembersForEdit(c.id);
       }
+    });
+  }
+
+  private loadMembersForEdit(clientId: number): void {
+    forkJoin({
+      members: this.memberApi.list(),
+      assigned: this.clientApi.getAssignedMembers(clientId),
+    }).subscribe({
+      next: ({ members, assigned }) => {
+        const options = members.members
+          .filter(m => m.role !== 'OWNER')
+          .map(m => ({ label: m.userName, value: m.id }));
+        this.availableMembers.set(options);
+        this.selectedMemberIds = assigned;
+      },
+      error: () => {
+        this.errorMessage.set('Erro ao carregar membros.');
+      },
     });
   }
 
@@ -117,9 +142,31 @@ export class ClientFormDialogComponent {
         const file = this.logoFile();
         const logoRemoved = !this.logoPreview() && client?.logoUrl;
 
+        const afterSave = () => {
+          if (this.isEdit() && this.selectedMemberIds.length > 0) {
+            this.clientApi.assignMembers(savedClient.id, this.selectedMemberIds).subscribe({
+              next: () => this.finishSave(),
+              error: () => {
+                this.errorMessage.set('Cliente salvo, mas erro ao vincular membros.');
+                this.loading.set(false);
+              },
+            });
+          } else if (this.isEdit()) {
+            this.clientApi.assignMembers(savedClient.id, []).subscribe({
+              next: () => this.finishSave(),
+              error: () => {
+                this.errorMessage.set('Cliente salvo, mas erro ao vincular membros.');
+                this.loading.set(false);
+              },
+            });
+          } else {
+            this.finishSave();
+          }
+        };
+
         if (file) {
           this.clientApi.uploadLogo(savedClient.id, file).subscribe({
-            next: () => this.finishSave(),
+            next: () => afterSave(),
             error: () => {
               this.errorMessage.set('Cliente salvo, mas erro ao enviar logo.');
               this.loading.set(false);
@@ -127,14 +174,14 @@ export class ClientFormDialogComponent {
           });
         } else if (logoRemoved) {
           this.clientApi.removeLogo(savedClient.id).subscribe({
-            next: () => this.finishSave(),
+            next: () => afterSave(),
             error: () => {
               this.errorMessage.set('Cliente salvo, mas erro ao remover logo.');
               this.loading.set(false);
             },
           });
         } else {
-          this.finishSave();
+          afterSave();
         }
       },
       error: () => {
@@ -149,6 +196,8 @@ export class ClientFormDialogComponent {
     this.logoFile.set(null);
     this.logoPreview.set(null);
     this.errorMessage.set(null);
+    this.availableMembers.set([]);
+    this.selectedMemberIds = [];
   }
 
   private finishSave(): void {
