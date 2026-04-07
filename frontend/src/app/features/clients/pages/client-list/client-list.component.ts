@@ -10,6 +10,8 @@ import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { MenuModule } from 'primeng/menu';
@@ -38,6 +40,8 @@ const AVATAR_COLORS = [
   imports: [
     ButtonModule,
     InputTextModule,
+    IconFieldModule,
+    InputIconModule,
     ConfirmDialogModule,
     SelectButtonModule,
     MenuModule,
