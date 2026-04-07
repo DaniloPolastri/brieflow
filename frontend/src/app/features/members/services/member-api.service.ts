@@ -22,6 +22,10 @@ export class MemberApiService {
     return this.http.post<InviteResponse>(`${this.apiUrl}/invite`, request);
   }
 
+  cancelInvite(inviteId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/invite/${inviteId}`);
+  }
+
   remove(memberId: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${memberId}`);
   }

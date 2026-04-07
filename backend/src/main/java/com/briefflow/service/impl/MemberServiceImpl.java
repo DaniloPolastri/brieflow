@@ -75,7 +75,7 @@ public class MemberServiceImpl implements MemberService {
                         t.getEmail(),
                         t.getRole().name(),
                         t.getPosition().name(),
-                        null,
+                        frontendUrl + "/auth/accept-invite?token=" + t.getToken(),
                         t.getExpiresAt().format(ISO_FORMATTER)
                 ))
                 .toList();
@@ -193,6 +193,27 @@ public class MemberServiceImpl implements MemberService {
 
         target.setRole(role);
         memberRepository.save(target);
+    }
+
+    @Override
+    @Transactional
+    public void cancelInvite(Long workspaceId, Long userId, Long inviteId) {
+        Member caller = memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membro nao encontrado"));
+
+        if (caller.getRole() != MemberRole.OWNER && caller.getRole() != MemberRole.MANAGER) {
+            throw new ForbiddenException("Apenas proprietarios e gerentes podem cancelar convites");
+        }
+
+        InviteToken inviteToken = inviteTokenRepository.findById(inviteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Convite nao encontrado"));
+
+        if (!inviteToken.getWorkspace().getId().equals(workspaceId)) {
+            throw new ForbiddenException("Convite nao pertence a este workspace");
+        }
+
+        inviteToken.setUsed(true);
+        inviteTokenRepository.save(inviteToken);
     }
 
     @Override

@@ -8,6 +8,7 @@ public interface MemberService {
     InviteTokenResponseDTO inviteMember(Long workspaceId, Long userId, InviteMemberRequestDTO request);
     void removeMember(Long workspaceId, Long userId, Long memberId);
     void updateMemberRole(Long workspaceId, Long userId, Long memberId, UpdateMemberRoleRequestDTO request);
+    void cancelInvite(Long workspaceId, Long userId, Long inviteId);
     InviteInfoResponseDTO getInviteInfo(String token);
     TokenResponseDTO acceptInvite(String token, AcceptInviteRequestDTO request);
 }

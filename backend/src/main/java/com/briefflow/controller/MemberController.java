@@ -39,6 +39,15 @@ public class MemberController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/invite/{id}")
+    public ResponseEntity<Void> cancelInvite(
+            @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long id) {
+        memberService.cancelInvite(workspaceId, userId, id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/role")
     public ResponseEntity<Void> updateMemberRole(
             @RequestAttribute("workspaceId") Long workspaceId,

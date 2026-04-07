@@ -42,6 +42,7 @@ export class MemberListComponent implements OnInit {
   readonly loading = signal(true);
   readonly showInviteDialog = signal(false);
 
+  readonly copiedInviteId = signal<number | null>(null);
   readonly currentUser = this.storage.getUser();
   readonly canManage = computed(() => {
     const role = this.currentUser?.role;
@@ -113,9 +114,27 @@ export class MemberListComponent implements OnInit {
     }
   }
 
-  copyInviteLink(link: string): void {
-    navigator.clipboard.writeText(link).then(() => {
-      // Feedback visual handled by tooltip
+  copyInviteLink(invite: InviteResponse): void {
+    navigator.clipboard.writeText(invite.inviteLink).then(() => {
+      this.copiedInviteId.set(invite.id);
+      setTimeout(() => this.copiedInviteId.set(null), 2000);
+    });
+  }
+
+  cancelInvite(invite: InviteResponse): void {
+    this.confirmService.confirm({
+      message: `Cancelar convite para ${invite.email}?`,
+      header: 'Cancelar convite',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Cancelar convite',
+      rejectLabel: 'Voltar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.memberApi.cancelInvite(invite.id).subscribe({
+          next: () => this.loadMembers(),
+          error: (err) => console.error('Erro ao cancelar convite:', err),
+        });
+      },
     });
   }
 
