@@ -3,6 +3,7 @@ package com.briefflow.unit.service;
 import com.briefflow.dto.client.ClientRequestDTO;
 import com.briefflow.dto.client.ClientResponseDTO;
 import com.briefflow.entity.Client;
+import com.briefflow.entity.ClientMember;
 import com.briefflow.entity.Member;
 import com.briefflow.entity.User;
 import com.briefflow.entity.Workspace;
@@ -11,6 +12,7 @@ import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
 import com.briefflow.mapper.ClientMapper;
+import com.briefflow.repository.ClientMemberRepository;
 import com.briefflow.repository.ClientRepository;
 import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.WorkspaceRepository;
@@ -35,6 +37,7 @@ import static org.mockito.Mockito.*;
 class ClientServiceImplTest {
 
     @Mock private ClientRepository clientRepository;
+    @Mock private ClientMemberRepository clientMemberRepository;
     @Mock private MemberRepository memberRepository;
     @Mock private WorkspaceRepository workspaceRepository;
     @Mock private ClientMapper clientMapper;
@@ -45,8 +48,8 @@ class ClientServiceImplTest {
     @BeforeEach
     void setUp() {
         clientService = new ClientServiceImpl(
-                clientRepository, memberRepository, workspaceRepository,
-                clientMapper, fileStorageService);
+                clientRepository, clientMemberRepository, memberRepository,
+                workspaceRepository, clientMapper, fileStorageService);
 
         lenient().when(clientMapper.toResponseDTO(any(Client.class))).thenAnswer(inv -> {
             Client c = inv.getArgument(0);
@@ -170,38 +173,47 @@ class ClientServiceImplTest {
     // --- list ---
 
     @Test
-    void should_listAllClients_when_noFilters() {
+    void should_listAllClients_when_ownerNoFilters() {
+        User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
         Client client1 = createClient(1L, "Alpha", workspace);
         Client client2 = createClient(2L, "Beta", workspace);
 
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
         when(clientRepository.findByWorkspaceIdOrderByNameAsc(1L)).thenReturn(List.of(client1, client2));
 
-        List<ClientResponseDTO> result = clientService.list(1L, null, null);
+        List<ClientResponseDTO> result = clientService.list(1L, 1L, null, null);
 
         assertEquals(2, result.size());
     }
 
     @Test
     void should_listActiveClients_when_activeFilterTrue() {
+        User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
         Client client = createClient(1L, "Alpha", workspace);
 
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
         when(clientRepository.findByWorkspaceIdAndActiveOrderByNameAsc(1L, true)).thenReturn(List.of(client));
 
-        List<ClientResponseDTO> result = clientService.list(1L, null, true);
+        List<ClientResponseDTO> result = clientService.list(1L, 1L, null, true);
 
         assertEquals(1, result.size());
     }
 
     @Test
     void should_searchClients_when_searchProvided() {
+        User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
         Client client = createClient(1L, "Acme Corp", workspace);
 
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
         when(clientRepository.searchByNameOrCompany(1L, "acme")).thenReturn(List.of(client));
 
-        List<ClientResponseDTO> result = clientService.list(1L, "acme", null);
+        List<ClientResponseDTO> result = clientService.list(1L, 1L, "acme", null);
 
         assertEquals(1, result.size());
         assertEquals("Acme Corp", result.get(0).name());
@@ -209,28 +221,115 @@ class ClientServiceImplTest {
 
     @Test
     void should_searchWithActiveFilter_when_bothProvided() {
+        User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
         Client client = createClient(1L, "Acme Corp", workspace);
 
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
         when(clientRepository.searchByNameOrCompanyAndActive(1L, "acme", true)).thenReturn(List.of(client));
 
-        List<ClientResponseDTO> result = clientService.list(1L, "acme", true);
+        List<ClientResponseDTO> result = clientService.list(1L, 1L, "acme", true);
 
         assertEquals(1, result.size());
     }
 
     @Test
     void should_treatBlankSearchAsNoSearch_when_blankString() {
+        User user = createUser(1L, "Owner", "owner@test.com");
         Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.OWNER);
         Client client = createClient(1L, "Alpha", workspace);
 
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
         when(clientRepository.findByWorkspaceIdOrderByNameAsc(1L)).thenReturn(List.of(client));
 
-        List<ClientResponseDTO> result = clientService.list(1L, "   ", null);
+        List<ClientResponseDTO> result = clientService.list(1L, 1L, "   ", null);
 
         assertEquals(1, result.size());
         verify(clientRepository).findByWorkspaceIdOrderByNameAsc(1L);
         verify(clientRepository, never()).searchByNameOrCompany(anyLong(), anyString());
+    }
+
+    // --- list: CREATIVE visibility filter ---
+
+    @Test
+    void should_listOnlyAssignedClients_when_creativeRole() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+        Client assignedClient = createClient(1L, "Assigned Client", workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+        when(clientRepository.findByMemberIdAndWorkspaceId(5L, 1L)).thenReturn(List.of(assignedClient));
+
+        List<ClientResponseDTO> result = clientService.list(1L, 2L, null, null);
+
+        assertEquals(1, result.size());
+        assertEquals("Assigned Client", result.get(0).name());
+        verify(clientRepository, never()).findByWorkspaceIdOrderByNameAsc(anyLong());
+    }
+
+    @Test
+    void should_listOnlyAssignedActiveClients_when_creativeWithActiveFilter() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+        Client assignedClient = createClient(1L, "Active Client", workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+        when(clientRepository.findByMemberIdAndWorkspaceIdAndActive(5L, 1L, true)).thenReturn(List.of(assignedClient));
+
+        List<ClientResponseDTO> result = clientService.list(1L, 2L, null, true);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void should_searchOnlyAssignedClients_when_creativeWithSearch() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+        Client assignedClient = createClient(1L, "Acme Corp", workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+        when(clientRepository.searchByMemberIdAndNameOrCompany(5L, 1L, "acme")).thenReturn(List.of(assignedClient));
+
+        List<ClientResponseDTO> result = clientService.list(1L, 2L, "acme", null);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void should_searchOnlyAssignedActiveClients_when_creativeWithSearchAndActive() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+        Client assignedClient = createClient(1L, "Acme Corp", workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+        when(clientRepository.searchByMemberIdAndNameOrCompanyAndActive(5L, 1L, "acme", true)).thenReturn(List.of(assignedClient));
+
+        List<ClientResponseDTO> result = clientService.list(1L, 2L, "acme", true);
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void should_listAllClients_when_managerRole() {
+        User user = createUser(1L, "Manager", "manager@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(1L, user, workspace, MemberRole.MANAGER);
+        Client client1 = createClient(1L, "Alpha", workspace);
+        Client client2 = createClient(2L, "Beta", workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(member));
+        when(clientRepository.findByWorkspaceIdOrderByNameAsc(1L)).thenReturn(List.of(client1, client2));
+
+        List<ClientResponseDTO> result = clientService.list(1L, 1L, null, null);
+
+        assertEquals(2, result.size());
+        verify(clientRepository, never()).findByMemberIdAndWorkspaceId(anyLong(), anyLong());
     }
 
     // --- toggleActive ---
@@ -418,6 +517,146 @@ class ClientServiceImplTest {
 
         verify(fileStorageService, never()).delete(anyString());
         verify(clientRepository, never()).save(any());
+    }
+
+    // --- assignMembers ---
+
+    @Test
+    void should_assignMembers_when_ownerAssigns() {
+        User user = createUser(1L, "Owner", "owner@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member ownerMember = createMember(1L, user, workspace, MemberRole.OWNER);
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        User creativeUser = createUser(2L, "Creative", "creative@test.com");
+        Member creativeMember = createMember(5L, creativeUser, workspace, MemberRole.CREATIVE);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(ownerMember));
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByIdAndWorkspaceId(5L, 1L)).thenReturn(Optional.of(creativeMember));
+        when(clientMemberRepository.existsByClientIdAndMemberId(1L, 5L)).thenReturn(false);
+
+        clientService.assignMembers(1L, List.of(5L), 1L, 1L);
+
+        verify(clientMemberRepository).save(argThat(cm ->
+                cm.getClientId().equals(1L) && cm.getMemberId().equals(5L)));
+    }
+
+    @Test
+    void should_skipDuplicate_when_memberAlreadyAssigned() {
+        User user = createUser(1L, "Owner", "owner@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member ownerMember = createMember(1L, user, workspace, MemberRole.OWNER);
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        User creativeUser = createUser(2L, "Creative", "creative@test.com");
+        Member creativeMember = createMember(5L, creativeUser, workspace, MemberRole.CREATIVE);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(ownerMember));
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByIdAndWorkspaceId(5L, 1L)).thenReturn(Optional.of(creativeMember));
+        when(clientMemberRepository.existsByClientIdAndMemberId(1L, 5L)).thenReturn(true);
+
+        clientService.assignMembers(1L, List.of(5L), 1L, 1L);
+
+        verify(clientMemberRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwForbidden_when_creativeAssignsMember() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+
+        assertThrows(ForbiddenException.class, () ->
+                clientService.assignMembers(1L, List.of(5L), 1L, 2L));
+    }
+
+    @Test
+    void should_throwNotFound_when_assigningNonExistentMember() {
+        User user = createUser(1L, "Owner", "owner@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member ownerMember = createMember(1L, user, workspace, MemberRole.OWNER);
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(ownerMember));
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByIdAndWorkspaceId(99L, 1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () ->
+                clientService.assignMembers(1L, List.of(99L), 1L, 1L));
+    }
+
+    // --- unassignMember ---
+
+    @Test
+    void should_unassignMember_when_ownerUnassigns() {
+        User user = createUser(1L, "Owner", "owner@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member ownerMember = createMember(1L, user, workspace, MemberRole.OWNER);
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        User creativeUser = createUser(2L, "Creative", "creative@test.com");
+        Member creativeMember = createMember(5L, creativeUser, workspace, MemberRole.CREATIVE);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(ownerMember));
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(memberRepository.findByIdAndWorkspaceId(5L, 1L)).thenReturn(Optional.of(creativeMember));
+
+        clientService.unassignMember(1L, 5L, 1L, 1L);
+
+        verify(clientMemberRepository).deleteByClientIdAndMemberId(1L, 5L);
+    }
+
+    @Test
+    void should_throwForbidden_when_creativeUnassignsMember() {
+        User user = createUser(2L, "Creative", "creative@test.com");
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Member member = createMember(5L, user, workspace, MemberRole.CREATIVE);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 1L)).thenReturn(Optional.of(member));
+
+        assertThrows(ForbiddenException.class, () ->
+                clientService.unassignMember(1L, 5L, 1L, 2L));
+    }
+
+    // --- getAssignedMemberIds ---
+
+    @Test
+    void should_getAssignedMemberIds_when_clientExists() {
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        ClientMember cm1 = new ClientMember();
+        cm1.setClientId(1L);
+        cm1.setMemberId(5L);
+        ClientMember cm2 = new ClientMember();
+        cm2.setClientId(1L);
+        cm2.setMemberId(6L);
+
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(clientMemberRepository.findByClientId(1L)).thenReturn(List.of(cm1, cm2));
+
+        List<Long> result = clientService.getAssignedMemberIds(1L, 1L);
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(5L));
+        assertTrue(result.contains(6L));
+    }
+
+    @Test
+    void should_returnEmptyList_when_noMembersAssigned() {
+        Workspace workspace = createWorkspace(1L, "Agency");
+        Client client = createClient(1L, "Acme Corp", workspace);
+
+        when(clientRepository.findByIdAndWorkspaceId(1L, 1L)).thenReturn(Optional.of(client));
+        when(clientMemberRepository.findByClientId(1L)).thenReturn(List.of());
+
+        List<Long> result = clientService.getAssignedMemberIds(1L, 1L);
+
+        assertTrue(result.isEmpty());
     }
 
     // --- Helper methods ---

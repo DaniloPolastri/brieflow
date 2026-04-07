@@ -1,5 +1,6 @@
 package com.briefflow.controller;
 
+import com.briefflow.dto.client.AssignMembersRequestDTO;
 import com.briefflow.dto.client.ClientRequestDTO;
 import com.briefflow.dto.client.ClientResponseDTO;
 import com.briefflow.service.ClientService;
@@ -32,9 +33,10 @@ public class ClientController {
     @GetMapping
     public ResponseEntity<List<ClientResponseDTO>> list(
             @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean active) {
-        return ResponseEntity.ok(clientService.list(workspaceId, search, active));
+        return ResponseEntity.ok(clientService.list(workspaceId, userId, search, active));
     }
 
     @GetMapping("/{id}")
@@ -77,5 +79,32 @@ public class ClientController {
             @RequestAttribute("userId") Long userId) {
         clientService.removeLogo(id, workspaceId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<Void> assignMembers(
+            @PathVariable Long id,
+            @Valid @RequestBody AssignMembersRequestDTO dto,
+            @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId) {
+        clientService.assignMembers(id, dto.memberIds(), workspaceId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<Void> unassignMember(
+            @PathVariable Long id,
+            @PathVariable Long memberId,
+            @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId) {
+        clientService.unassignMember(id, memberId, workspaceId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<Long>> getAssignedMembers(
+            @PathVariable Long id,
+            @RequestAttribute("workspaceId") Long workspaceId) {
+        return ResponseEntity.ok(clientService.getAssignedMemberIds(id, workspaceId));
     }
 }

@@ -3,6 +3,7 @@ package com.briefflow.service.impl;
 import com.briefflow.dto.client.ClientRequestDTO;
 import com.briefflow.dto.client.ClientResponseDTO;
 import com.briefflow.entity.Client;
+import com.briefflow.entity.ClientMember;
 import com.briefflow.entity.Member;
 import com.briefflow.entity.Workspace;
 import com.briefflow.enums.MemberRole;
@@ -10,6 +11,7 @@ import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
 import com.briefflow.mapper.ClientMapper;
+import com.briefflow.repository.ClientMemberRepository;
 import com.briefflow.repository.ClientRepository;
 import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.WorkspaceRepository;
@@ -32,17 +34,20 @@ public class ClientServiceImpl implements ClientService {
     private static final String LOGO_SUBDIRECTORY = "logos";
 
     private final ClientRepository clientRepository;
+    private final ClientMemberRepository clientMemberRepository;
     private final MemberRepository memberRepository;
     private final WorkspaceRepository workspaceRepository;
     private final ClientMapper clientMapper;
     private final FileStorageService fileStorageService;
 
     public ClientServiceImpl(ClientRepository clientRepository,
+                             ClientMemberRepository clientMemberRepository,
                              MemberRepository memberRepository,
                              WorkspaceRepository workspaceRepository,
                              ClientMapper clientMapper,
                              FileStorageService fileStorageService) {
         this.clientRepository = clientRepository;
+        this.clientMemberRepository = clientMemberRepository;
         this.memberRepository = memberRepository;
         this.workspaceRepository = workspaceRepository;
         this.clientMapper = clientMapper;
@@ -84,18 +89,16 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClientResponseDTO> list(Long workspaceId, String search, Boolean active) {
-        boolean hasSearch = StringUtils.hasText(search);
+    public List<ClientResponseDTO> list(Long workspaceId, Long userId, String search, Boolean active) {
+        Member member = memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membro nao encontrado"));
 
         List<Client> clients;
-        if (hasSearch && active != null) {
-            clients = clientRepository.searchByNameOrCompanyAndActive(workspaceId, search.trim(), active);
-        } else if (hasSearch) {
-            clients = clientRepository.searchByNameOrCompany(workspaceId, search.trim());
-        } else if (active != null) {
-            clients = clientRepository.findByWorkspaceIdAndActiveOrderByNameAsc(workspaceId, active);
+
+        if (member.getRole() == MemberRole.CREATIVE) {
+            clients = listForCreative(member.getId(), workspaceId, search, active);
         } else {
-            clients = clientRepository.findByWorkspaceIdOrderByNameAsc(workspaceId);
+            clients = listForOwnerOrManager(workspaceId, search, active);
         }
 
         return clients.stream()
@@ -148,7 +151,75 @@ public class ClientServiceImpl implements ClientService {
         }
     }
 
+    @Override
+    @Transactional
+    public void assignMembers(Long clientId, List<Long> memberIds, Long workspaceId, Long userId) {
+        requireOwnerOrManager(userId, workspaceId);
+        findClientInWorkspace(clientId, workspaceId);
+
+        for (Long memberId : memberIds) {
+            Member member = memberRepository.findByIdAndWorkspaceId(memberId, workspaceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Membro nao encontrado: " + memberId));
+
+            if (!clientMemberRepository.existsByClientIdAndMemberId(clientId, memberId)) {
+                ClientMember clientMember = new ClientMember();
+                clientMember.setClientId(clientId);
+                clientMember.setMemberId(memberId);
+                clientMemberRepository.save(clientMember);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unassignMember(Long clientId, Long memberId, Long workspaceId, Long userId) {
+        requireOwnerOrManager(userId, workspaceId);
+        findClientInWorkspace(clientId, workspaceId);
+        if (memberRepository.findByIdAndWorkspaceId(memberId, workspaceId).isEmpty()) {
+            throw new ResourceNotFoundException("Membro nao encontrado");
+        }
+
+        clientMemberRepository.deleteByClientIdAndMemberId(clientId, memberId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getAssignedMemberIds(Long clientId, Long workspaceId) {
+        findClientInWorkspace(clientId, workspaceId);
+        return clientMemberRepository.findByClientId(clientId).stream()
+                .map(ClientMember::getMemberId)
+                .toList();
+    }
+
     // --- Private helpers ---
+
+    private List<Client> listForOwnerOrManager(Long workspaceId, String search, Boolean active) {
+        boolean hasSearch = StringUtils.hasText(search);
+
+        if (hasSearch && active != null) {
+            return clientRepository.searchByNameOrCompanyAndActive(workspaceId, search.trim(), active);
+        } else if (hasSearch) {
+            return clientRepository.searchByNameOrCompany(workspaceId, search.trim());
+        } else if (active != null) {
+            return clientRepository.findByWorkspaceIdAndActiveOrderByNameAsc(workspaceId, active);
+        } else {
+            return clientRepository.findByWorkspaceIdOrderByNameAsc(workspaceId);
+        }
+    }
+
+    private List<Client> listForCreative(Long memberId, Long workspaceId, String search, Boolean active) {
+        boolean hasSearch = StringUtils.hasText(search);
+
+        if (hasSearch && active != null) {
+            return clientRepository.searchByMemberIdAndNameOrCompanyAndActive(memberId, workspaceId, search.trim(), active);
+        } else if (hasSearch) {
+            return clientRepository.searchByMemberIdAndNameOrCompany(memberId, workspaceId, search.trim());
+        } else if (active != null) {
+            return clientRepository.findByMemberIdAndWorkspaceIdAndActive(memberId, workspaceId, active);
+        } else {
+            return clientRepository.findByMemberIdAndWorkspaceId(memberId, workspaceId);
+        }
+    }
 
     private void requireOwnerOrManager(Long userId, Long workspaceId) {
         Member member = memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
