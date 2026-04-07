@@ -13,17 +13,17 @@
 ## Task Summary
 
 ### Backend
-- [ ] Task B1: Migration V6 + Client Entity + DTOs + Repository ⚡ PARALLEL GROUP A
-- [ ] Task B2: FileStorageService + WebConfig + SecurityConfig ⚡ PARALLEL GROUP A
-- [ ] Task B3: ClientMapper (depends on B1)
-- [ ] Task B4: ClientService interface + ClientServiceImpl + Tests (depends on B1, B2, B3)
-- [ ] Task B5: ClientController (depends on B4)
+- [x] Task B1: Migration V6 + Client Entity + DTOs + Repository ⚡ PARALLEL GROUP A
+- [x] Task B2: FileStorageService + WebConfig + SecurityConfig ⚡ PARALLEL GROUP A
+- [x] Task B3: ClientMapper (depends on B1)
+- [x] Task B4: ClientService interface + ClientServiceImpl + Tests (depends on B1, B2, B3)
+- [x] Task B5: ClientController (depends on B4)
 
 ### Frontend
-- [ ] Task F1: Client Model + ClientApiService + Tests (depends on B5 backend) ⚡ PARALLEL GROUP B
-- [ ] Task F2: Routes + Sidebar nav item ⚡ PARALLEL GROUP B
-- [ ] Task F3: ClientFormDialogComponent + Tests (depends on F1) — **invoke `frontend-design` before template**
-- [ ] Task F4: ClientListComponent + Tests (depends on F1, F2, F3) — **invoke `frontend-design` before template**
+- [x] Task F1: Client Model + ClientApiService + Tests (depends on B5 backend) ⚡ PARALLEL GROUP B
+- [x] Task F2: Routes + Sidebar nav item ⚡ PARALLEL GROUP B
+- [x] Task F3: ClientFormDialogComponent + Tests (depends on F1) — **invoke `frontend-design` before template**
+- [x] Task F4: ClientListComponent + Tests (depends on F1, F2, F3) — **invoke `frontend-design` before template**
 
 Nenhuma task frontend-backend paralelizável — backend deve estar pronto antes do frontend consumir.
 
