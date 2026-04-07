@@ -12,6 +12,11 @@ const routes: Routes = [
       import('./pages/register/register.component').then(m => m.RegisterComponent),
   },
   {
+    path: 'accept-invite',
+    loadComponent: () =>
+      import('./pages/accept-invite/accept-invite.component').then(m => m.AcceptInviteComponent),
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',

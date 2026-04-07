@@ -2,6 +2,10 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  workspaceId: number;
+  workspaceName: string;
+  role: string;
+  position: string;
 }
 
 export interface LoginRequest {
@@ -13,6 +17,7 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+  workspaceName: string;
 }
 
 export interface RefreshTokenRequest {

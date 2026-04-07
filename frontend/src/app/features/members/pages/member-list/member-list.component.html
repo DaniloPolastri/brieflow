@@ -1,0 +1,83 @@
+<div class="p-6">
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-[22px] font-semibold tracking-tight text-gray-900">Equipe</h1>
+      <p class="mt-1 text-[14px] text-gray-500">Gerencie os membros do seu workspace.</p>
+    </div>
+    @if (canManage) {
+      <p-button label="Convidar membro" icon="pi pi-plus" (onClick)="showInviteDialog.set(true)" />
+    }
+  </div>
+
+  <p-table [value]="members()" [loading]="loading()" styleClass="p-datatable-sm">
+    <ng-template #header>
+      <tr>
+        <th>Membro</th>
+        <th>Cargo</th>
+        <th>Papel</th>
+        <th class="w-24">Ações</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-member>
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-[13px] font-medium text-indigo-700">
+              {{ getInitials(member.userName) }}
+            </div>
+            <div>
+              <div class="text-[14px] font-medium text-gray-900">{{ member.userName }}</div>
+              <div class="text-[12px] text-gray-500">{{ member.userEmail }}</div>
+            </div>
+          </div>
+        </td>
+        <td class="text-[13px] text-gray-700">{{ getPositionLabel(member.position) }}</td>
+        <td><p-tag [value]="getRoleLabel(member.role)" [severity]="getRoleSeverity(member.role)" /></td>
+        <td>
+          @if (canManage && member.role !== 'OWNER') {
+            <p-button icon="pi pi-trash" [text]="true" severity="danger" (onClick)="removeMember(member)" />
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  @if (pendingInvites().length > 0) {
+    <div class="mt-6">
+      <h2 class="mb-3 text-[14px] font-medium text-gray-500">Convites pendentes</h2>
+      <div class="space-y-2">
+        @for (invite of pendingInvites(); track invite.id) {
+          <div class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-[13px] font-medium text-gray-500">?</div>
+              <div>
+                <div class="text-[14px] text-gray-700">{{ invite.email }}</div>
+                <div class="text-[12px] text-gray-400">Expira em {{ formatExpiresAt(invite.expiresAt) }}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <p-button [icon]="copiedInviteId() === invite.id ? 'pi pi-check' : 'pi pi-copy'"
+                        [text]="true"
+                        [severity]="copiedInviteId() === invite.id ? 'success' : 'secondary'"
+                        [pTooltip]="copiedInviteId() === invite.id ? 'Copiado!' : 'Copiar link'"
+                        tooltipPosition="top"
+                        (onClick)="copyInviteLink(invite)" />
+              @if (canManage) {
+                <p-button icon="pi pi-times"
+                          [text]="true"
+                          severity="danger"
+                          pTooltip="Cancelar convite"
+                          tooltipPosition="top"
+                          (onClick)="cancelInvite(invite)" />
+              }
+              <p-tag value="Pendente" severity="warn" />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <app-invite-member-dialog [(visible)]="showInviteDialog" (invited)="loadMembers()" />
+  <p-confirmDialog />
+</div>

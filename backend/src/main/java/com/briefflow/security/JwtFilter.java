@@ -48,6 +48,11 @@ public class JwtFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            Long userId = jwtService.extractUserId(token);
+            Long workspaceId = jwtService.extractWorkspaceId(token);
+            request.setAttribute("userId", userId);
+            request.setAttribute("workspaceId", workspaceId);
         }
 
         filterChain.doFilter(request, response);

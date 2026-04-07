@@ -1,0 +1,39 @@
+<p-dialog header="Convidar membro" [(visible)]="visible" [modal]="true" [style]="{width: '480px'}" (onHide)="onHide()">
+  @if (!inviteLink()) {
+    <!-- Form state -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+      <div>
+        <label for="invite-email" class="mb-1.5 block text-[13px] font-medium text-gray-700">Email</label>
+        <input pInputText id="invite-email" formControlName="email" placeholder="membro@agencia.com" class="w-full" />
+      </div>
+
+      <div>
+        <label for="invite-role" class="mb-1.5 block text-[13px] font-medium text-gray-700">Papel</label>
+        <p-select id="invite-role" formControlName="role" [options]="roleOptions" optionLabel="label" optionValue="value" appendTo="body" class="w-full" />
+      </div>
+
+      <div>
+        <label for="invite-position" class="mb-1.5 block text-[13px] font-medium text-gray-700">Cargo</label>
+        <p-select id="invite-position" formControlName="position" [options]="positionOptions" optionLabel="label" optionValue="value" appendTo="body" [scrollHeight]="'200px'" class="w-full" />
+      </div>
+
+      <p-button type="submit" label="Gerar link de convite" [loading]="loading()" [disabled]="form.invalid || loading()" styleClass="w-full" />
+    </form>
+  } @else {
+    <!-- Link generated state -->
+    <div class="space-y-4">
+      <div class="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-[13px] text-green-700">
+        <i class="pi pi-check-circle"></i>
+        <span>Convite gerado com sucesso!</span>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-[13px] font-medium text-gray-700">Link de convite</label>
+        <div class="flex gap-2">
+          <input pInputText [value]="inviteLink()" readonly class="w-full font-mono text-[12px]" />
+          <p-button icon="pi pi-copy" [label]="copied() ? 'Copiado!' : 'Copiar'" (onClick)="copyLink()" [severity]="copied() ? 'success' : 'secondary'" />
+        </div>
+      </div>
+    </div>
+  }
+</p-dialog>

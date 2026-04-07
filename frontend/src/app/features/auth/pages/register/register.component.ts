@@ -24,6 +24,7 @@ export class RegisterComponent {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
+    workspaceName: ['', [Validators.required, Validators.maxLength(150)]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     confirmPassword: ['', [Validators.required]],
   }, { validators: [passwordMatchValidator] });
@@ -34,8 +35,8 @@ export class RegisterComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    const { name, email, password } = this.form.getRawValue();
-    this.authService.register({ name, email, password }).subscribe({
+    const { name, email, password, workspaceName } = this.form.getRawValue();
+    this.authService.register({ name, email, password, workspaceName }).subscribe({
       next: () => {
         this.loading.set(false);
         this.router.navigate(['/dashboard']);

@@ -13,25 +13,25 @@
 ## Task Summary
 
 ### Backend
-- [ ] Task B1: Flyway migrations V3, V4, V5 ⚡ PARALLEL GROUP A
-- [ ] Task B2: Enums MemberRole + MemberPosition ⚡ PARALLEL GROUP A
-- [ ] Task B3: Entities Workspace + Member + InviteToken + unit tests ⚡ PARALLEL GROUP A
-- [ ] Task B4: Repositories WorkspaceRepository + MemberRepository + InviteTokenRepository (depende de B1, B2, B3)
-- [ ] Task B5: DTOs workspace/member/invite + modify RegisterRequestDTO + UserInfoDTO ⚡ PARALLEL GROUP A
-- [ ] Task B6: JwtService + JwtFilter modifications (workspaceId claim) + unit tests (depende de B2)
-- [ ] Task B7: Services WorkspaceService + MemberService + modify AuthServiceImpl + unit tests (depende de B3, B4, B5, B6)
-- [ ] Task B8: Controllers WorkspaceController + MemberController + InviteController + SecurityConfig + integration tests (depende de B7)
+- [x] Task B1: Flyway migrations V3, V4, V5 ⚡ PARALLEL GROUP A
+- [x] Task B2: Enums MemberRole + MemberPosition ⚡ PARALLEL GROUP A
+- [x] Task B3: Entities Workspace + Member + InviteToken + unit tests ⚡ PARALLEL GROUP A
+- [x] Task B4: Repositories WorkspaceRepository + MemberRepository + InviteTokenRepository (depende de B1, B2, B3)
+- [x] Task B5: DTOs workspace/member/invoke + modify RegisterRequestDTO + UserInfoDTO ⚡ PARALLEL GROUP A
+- [x] Task B6: JwtService + JwtFilter modifications (workspaceId claim) + unit tests (depende de B2)
+- [x] Task B7: Services WorkspaceService + MemberService + modify AuthServiceImpl + unit tests (depende de B3, B4, B5, B6)
+- [x] Task B8: Controllers WorkspaceController + MemberController + InviteController + SecurityConfig + integration tests (depende de B7)
 
 ### Frontend
-- [ ] Task F1: Models member.model.ts + workspace.model.ts + invite.model.ts + modify user.model.ts ⚡ PARALLEL GROUP A
-- [ ] Task F2: Services member-api + workspace-api + invite-api (depende de F1)
-- [ ] Task F3: Auth interceptor modification + role guard ⚡ PARALLEL GROUP A
-- [ ] Task F4: Register page modification — add workspaceName field (depende de F1, B8 backend)
-- [ ] Task F5: Invite member dialog component + tests (depende de F2)
-- [ ] Task F6: Member list page + tests (depende de F2, F5, B8 backend)
-- [ ] Task F7: Accept invite page + tests (depende de F2, F3, B8 backend)
-- [ ] Task F8: Settings page + tests (depende de F2, B8 backend)
-- [ ] Task F9: Routes — members.routes.ts + settings.routes.ts + modify auth.routes.ts + app.routes.ts (depende de F4-F8)
+- [x] Task F1: Models member.model.ts + workspace.model.ts + invite.model.ts + modify user.model.ts ⚡ PARALLEL GROUP A
+- [x] Task F2: Services member-api + workspace-api + invite-api (depende de F1)
+- [x] Task F3: Auth interceptor modification + role guard ⚡ PARALLEL GROUP A
+- [x] Task F4: Register page modification — add workspaceName field (depende de F1, B8 backend)
+- [x] Task F5: Invite member dialog component + tests (depende de F2)
+- [x] Task F6: Member list page + tests (depende de F2, F5, B8 backend)
+- [x] Task F7: Accept invite page + tests (depende de F2, F3, B8 backend)
+- [x] Task F8: Settings page + tests (depende de F2, B8 backend)
+- [x] Task F9: Routes — members.routes.ts + settings.routes.ts + modify auth.routes.ts + app.routes.ts (depende de F4-F8)
 
 ---
 

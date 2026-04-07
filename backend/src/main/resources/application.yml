@@ -29,3 +29,4 @@ app:
   file:
     upload-dir: ./uploads
     max-size: 52428800
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}

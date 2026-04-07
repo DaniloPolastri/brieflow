@@ -53,7 +53,7 @@ export class AuthService {
     this._currentUser.set(null);
   }
 
-  private handleAuthResponse(response: TokenResponse): void {
+  handleAuthResponse(response: TokenResponse): void {
     this.storage.setAccessToken(response.accessToken);
     this.storage.setRefreshToken(response.refreshToken);
     this.storage.setUser(response.user);

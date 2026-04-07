@@ -7,6 +7,10 @@ import { catchError, switchMap, throwError } from 'rxjs';
 
 let isRefreshing = false;
 
+function isPublicUrl(url: string): boolean {
+  return url.includes('/auth/') || url.includes('/api/v1/invite/');
+}
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const storage = inject(StorageService);
   const authService = inject(AuthService);
@@ -17,9 +21,22 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/')) {
+      if (isPublicUrl(req.url)) {
+        return throwError(() => error);
+      }
+
+      // 403 on protected endpoint = removed from workspace → logout
+      if (error.status === 403) {
+        authService.clearAuth();
+        router.navigate(['/auth/login']);
+        return throwError(() => error);
+      }
+
+      // 401 on protected endpoint = token expired → try refresh
+      if (error.status === 401) {
         return handleRefresh(req, next, authService, storage, router);
       }
+
       return throwError(() => error);
     })
   );
