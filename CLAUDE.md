@@ -102,6 +102,16 @@ src/
 - Reactive Forms (not template-driven)
 - Lazy loading for all feature routes
 - Vitest with global functions (no imports needed)
+- **Path Aliases** — Usar aliases do `tsconfig.json` em vez de caminhos relativos longos. Regras:
+  - Se o import tem **2 ou mais níveis de `../`** (ex: `../../services/foo`), DEVE usar alias
+  - Imports relativos curtos (`./` ou `../`) dentro do mesmo feature/módulo são aceitáveis
+  - Aliases padrão:
+    - `@core/*` → `src/core/*`
+    - `@shared/*` → `src/shared/*`
+    - `@features/*` → `src/features/*`
+    - `@layout/*` → `src/layout/*`
+    - `@env/*` → `src/environments/*`
+  - Se o alias necessário **não existir** no `tsconfig.json`, criar antes de usar (adicionar em `compilerOptions.paths`)
 
 ### Spring Boot Conventions
 
@@ -251,6 +261,37 @@ Este projeto usa um arquivo `docs/lessons.md` como memória persistente de erros
 - Após receber o review, usar `receiving-code-review` para processar o feedback.
 - Finalizar com `finishing-a-development-branch` para decidir como integrar o trabalho.
 - Nunca pular etapas. Cada implementação passa pelo fluxo completo.
+
+### Code Review → Extração de Lições (obrigatório)
+
+Durante o `requesting-code-review`, o agente de review DEVE incluir uma seção final de **análise de lições** no output. Essa análise verifica:
+
+1. **Erros recorrentes:** Padrões que violam convenções do CLAUDE.md (ex: decorator legado, FetchType.EAGER, constructor injection)
+2. **Inconsistências:** Diferenças entre o que foi planejado e o que foi implementado que indicam confusão ou desconhecimento
+3. **Padrões frágeis:** Código que funciona mas é propenso a quebrar (ex: hardcoded values, falta de validação em boundary, queries N+1)
+4. **Desvios de arquitetura:** Violações das regras de dependência entre camadas (core/shared/features/layout)
+
+**Formato da seção no review:**
+
+```markdown
+## Lições Identificadas
+
+### Novas lições para `docs/lessons.md`
+- **[Categoria] — Título:** Descrição do erro + regra acionável
+- ...
+
+### Lições existentes reforçadas
+- Lição X foi violada novamente → considerar promover para CLAUDE.md como regra formal
+
+### Nenhuma lição identificada
+(se o código seguiu todas as convenções corretamente)
+```
+
+**Regras:**
+- O reviewer DEVE ler `docs/lessons.md` antes de revisar, para verificar se erros passados se repetiram
+- Se identificar novas lições, registrar em `docs/lessons.md` imediatamente após o review
+- Se uma lição existente foi violada pela 3ª vez, propor sua promoção para regra formal no CLAUDE.md
+- Lições devem ser **acionáveis e preventivas**, não descritivas (seguir o formato existente de lessons.md)
 
 ### Escrita de Planos — Agent Team Orquestrador (obrigatório)
 

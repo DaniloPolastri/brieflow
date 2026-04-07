@@ -6,36 +6,37 @@ import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
+import com.briefflow.mapper.InviteMapper;
 import com.briefflow.mapper.MemberMapper;
 import com.briefflow.repository.*;
 import com.briefflow.service.MemberService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class MemberServiceImpl implements MemberService {
 
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-
     private final MemberRepository memberRepository;
     private final InviteTokenRepository inviteTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final MemberMapper memberMapper;
+    private final InviteMapper inviteMapper;
     private final String frontendUrl;
 
     public MemberServiceImpl(MemberRepository memberRepository,
                              InviteTokenRepository inviteTokenRepository,
                              RefreshTokenRepository refreshTokenRepository,
                              MemberMapper memberMapper,
-                             @org.springframework.beans.factory.annotation.Value("${app.frontend-url}") String frontendUrl) {
+                             InviteMapper inviteMapper,
+                             @Value("${app.frontend-url}") String frontendUrl) {
         this.memberRepository = memberRepository;
         this.inviteTokenRepository = inviteTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.memberMapper = memberMapper;
+        this.inviteMapper = inviteMapper;
         this.frontendUrl = frontendUrl;
     }
 
@@ -50,14 +51,8 @@ public class MemberServiceImpl implements MemberService {
 
         List<InviteTokenResponseDTO> inviteDTOs = pendingInvites.stream()
                 .filter(InviteToken::isUsable)
-                .map(t -> new InviteTokenResponseDTO(
-                        t.getId(),
-                        t.getEmail(),
-                        t.getRole().name(),
-                        t.getPosition().name(),
-                        frontendUrl + "/auth/accept-invite?token=" + t.getToken(),
-                        t.getExpiresAt().format(ISO_FORMATTER)
-                ))
+                .map(t -> inviteMapper.toTokenResponseDTO(t,
+                        frontendUrl + "/auth/accept-invite?token=" + t.getToken()))
                 .toList();
 
         return new MembersListResponseDTO(memberDTOs, inviteDTOs);

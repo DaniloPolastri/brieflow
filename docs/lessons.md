@@ -82,3 +82,8 @@
 - **Erro:** Populei campos String de DTOs com `localDateTime.toString()` que produz formato inconsistente dependendo dos milissegundos (às vezes inclui, às vezes não)
 - **Regra:** Sempre usar `DateTimeFormatter.ISO_LOCAL_DATE_TIME` (ou formato específico) para converter datas em String. Definir constante no service: `private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME`
 - **Contexto:** Todo service que converte LocalDateTime para String em DTOs
+
+## [Git] — Sempre criar branch antes de qualquer alteração de código
+- **Erro:** Fiz refatoração (MapStruct mappers) direto na `main` sem criar branch, violando a regra do CLAUDE.md
+- **Regra:** Toda alteração de código — feature, fix OU refactor — DEVE começar criando branch: `feature/*`, `fix/*` ou `refactor/*`. Nunca codar direto na `main`. Criar a branch é o PRIMEIRO passo, antes de qualquer edição
+- **Contexto:** Qualquer sessão de implementação, refatoração ou correção de bug
