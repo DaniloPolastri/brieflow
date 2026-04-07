@@ -21,7 +21,7 @@
 
     <!-- Name -->
     <div>
-      <label for="client-name" class="mb-1.5 block text-[13px] font-medium text-gray-700">Nome *</label>
+      <label for="client-name" class="mb-1.5 block text-[14px] font-medium text-gray-700">Nome *</label>
       <input pInputText id="client-name" formControlName="name" placeholder="Nome do cliente" class="w-full" />
       @if (form.get('name')?.invalid && form.get('name')?.touched) {
         <small class="mt-1 block text-[12px] text-red-500">Nome é obrigatório.</small>
@@ -30,13 +30,13 @@
 
     <!-- Company -->
     <div>
-      <label for="client-company" class="mb-1.5 block text-[13px] font-medium text-gray-700">Empresa</label>
+      <label for="client-company" class="mb-1.5 block text-[14px] font-medium text-gray-700">Empresa</label>
       <input pInputText id="client-company" formControlName="company" placeholder="Nome da empresa" class="w-full" />
     </div>
 
     <!-- Email -->
     <div>
-      <label for="client-email" class="mb-1.5 block text-[13px] font-medium text-gray-700">Email</label>
+      <label for="client-email" class="mb-1.5 block text-[14px] font-medium text-gray-700">Email</label>
       <input pInputText id="client-email" formControlName="email" placeholder="email@empresa.com" class="w-full" />
       @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
         <small class="mt-1 block text-[12px] text-red-500">Email inválido.</small>
@@ -45,7 +45,7 @@
 
     <!-- Phone -->
     <div>
-      <label for="client-phone" class="mb-1.5 block text-[13px] font-medium text-gray-700">Telefone</label>
+      <label for="client-phone" class="mb-1.5 block text-[14px] font-medium text-gray-700">Telefone</label>
       <input pInputText id="client-phone" formControlName="phone" placeholder="(11) 99999-9999" class="w-full" />
     </div>
 
