@@ -6,7 +6,7 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { InviteApiService } from '../../services/invite-api.service';
-import { StorageService } from '../../../../core/services/storage.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { InviteInfo } from '../../models/invite.model';
 import { MemberRole, MemberPosition, MEMBER_ROLE_LABELS, MEMBER_POSITION_LABELS } from '../../../members/models/member.model';
 
@@ -21,7 +21,7 @@ export class AcceptInviteComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly inviteApi = inject(InviteApiService);
-  private readonly storage = inject(StorageService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
 
   private readonly roleLabels: Record<string, string> = MEMBER_ROLE_LABELS as Record<string, string>;
@@ -75,9 +75,7 @@ export class AcceptInviteComponent implements OnInit {
 
     this.inviteApi.accept(this.token(), request).subscribe({
       next: response => {
-        this.storage.setAccessToken(response.accessToken);
-        this.storage.setRefreshToken(response.refreshToken);
-        this.storage.setUser(response.user);
+        this.authService.handleAuthResponse(response);
         this.loading.set(false);
         this.router.navigate(['/dashboard']);
       },

@@ -1,9 +1,9 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter, ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { AcceptInviteComponent } from './accept-invite.component';
 import { InviteApiService } from '../../services/invite-api.service';
-import { StorageService } from '../../../../core/services/storage.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { InviteInfo } from '../../models/invite.model';
 import { TokenResponse } from '../../../../core/models/user.model';
 
@@ -45,10 +45,8 @@ function createTestBed(inviteInfo: InviteInfo, token = 'test-token-abc') {
     getInfo: vi.fn().mockReturnValue(of(inviteInfo)),
     accept: vi.fn().mockReturnValue(of(mockTokenResponse)),
   };
-  const storageSpy = {
-    setAccessToken: vi.fn(),
-    setRefreshToken: vi.fn(),
-    setUser: vi.fn(),
+  const authServiceSpy = {
+    handleAuthResponse: vi.fn(),
   };
   const activatedRouteMock = {
     snapshot: {
@@ -58,27 +56,27 @@ function createTestBed(inviteInfo: InviteInfo, token = 'test-token-abc') {
     },
   };
 
-  return { inviteApiSpy, storageSpy, activatedRouteMock };
+  return { inviteApiSpy, authServiceSpy, activatedRouteMock };
 }
 
 describe('AcceptInviteComponent', () => {
   let component: AcceptInviteComponent;
   let fixture: ComponentFixture<AcceptInviteComponent>;
   let inviteApiSpy: ReturnType<typeof createTestBed>['inviteApiSpy'];
-  let storageSpy: ReturnType<typeof createTestBed>['storageSpy'];
+  let authServiceSpy: ReturnType<typeof createTestBed>['authServiceSpy'];
   let router: Router;
 
   beforeEach(async () => {
     const deps = createTestBed(mockInviteInfoNewUser);
     inviteApiSpy = deps.inviteApiSpy;
-    storageSpy = deps.storageSpy;
+    authServiceSpy = deps.authServiceSpy;
 
     await TestBed.configureTestingModule({
       imports: [AcceptInviteComponent],
       providers: [
         provideRouter([]),
         { provide: InviteApiService, useValue: inviteApiSpy },
-        { provide: StorageService, useValue: storageSpy },
+        { provide: AuthService, useValue: authServiceSpy },
         { provide: ActivatedRoute, useValue: deps.activatedRouteMock },
       ],
     }).compileComponents();
@@ -117,7 +115,7 @@ describe('AcceptInviteComponent', () => {
       providers: [
         provideRouter([]),
         { provide: InviteApiService, useValue: deps.inviteApiSpy },
-        { provide: StorageService, useValue: deps.storageSpy },
+        { provide: AuthService, useValue: deps.authServiceSpy },
         { provide: ActivatedRoute, useValue: deps.activatedRouteMock },
       ],
     }).compileComponents();
@@ -142,9 +140,7 @@ describe('AcceptInviteComponent', () => {
       name: 'Novo Usuario',
       password: 'senha1234',
     });
-    expect(storageSpy.setAccessToken).toHaveBeenCalledWith('access-token-123');
-    expect(storageSpy.setRefreshToken).toHaveBeenCalledWith('refresh-token-456');
-    expect(storageSpy.setUser).toHaveBeenCalledWith(mockTokenResponse.user);
+    expect(authServiceSpy.handleAuthResponse).toHaveBeenCalledWith(mockTokenResponse);
     expect(navigateSpy).toHaveBeenCalledWith(['/dashboard']);
   });
 });
