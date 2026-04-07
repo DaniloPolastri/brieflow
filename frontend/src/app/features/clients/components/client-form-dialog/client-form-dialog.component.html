@@ -1,0 +1,63 @@
+<p-dialog [header]="dialogTitle()" [(visible)]="visible" [modal]="true" [style]="{width: '520px'}" (onHide)="onHide()">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+    <!-- Logo upload -->
+    <div class="flex flex-col items-center gap-2">
+      @if (logoPreview()) {
+        <div class="relative">
+          <img [src]="logoPreview()" alt="Logo preview" class="h-20 w-20 rounded-full object-cover border border-gray-200" />
+          <button type="button" (click)="removeLogo()"
+            class="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs hover:bg-red-600 transition-colors">
+            <i class="pi pi-times text-[10px]"></i>
+          </button>
+        </div>
+      } @else {
+        <label class="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors">
+          <i class="pi pi-camera text-xl"></i>
+          <span class="text-[10px] mt-0.5">Logo</span>
+          <input type="file" accept="image/jpeg,image/png" class="hidden" (change)="onFileSelect($event)" />
+        </label>
+      }
+    </div>
+
+    <!-- Name -->
+    <div>
+      <label for="client-name" class="mb-1.5 block text-[13px] font-medium text-gray-700">Nome *</label>
+      <input pInputText id="client-name" formControlName="name" placeholder="Nome do cliente" class="w-full" />
+      @if (form.get('name')?.invalid && form.get('name')?.touched) {
+        <small class="mt-1 block text-[12px] text-red-500">Nome é obrigatório.</small>
+      }
+    </div>
+
+    <!-- Company -->
+    <div>
+      <label for="client-company" class="mb-1.5 block text-[13px] font-medium text-gray-700">Empresa</label>
+      <input pInputText id="client-company" formControlName="company" placeholder="Nome da empresa" class="w-full" />
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label for="client-email" class="mb-1.5 block text-[13px] font-medium text-gray-700">Email</label>
+      <input pInputText id="client-email" formControlName="email" placeholder="email@empresa.com" class="w-full" />
+      @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+        <small class="mt-1 block text-[12px] text-red-500">Email inválido.</small>
+      }
+    </div>
+
+    <!-- Phone -->
+    <div>
+      <label for="client-phone" class="mb-1.5 block text-[13px] font-medium text-gray-700">Telefone</label>
+      <input pInputText id="client-phone" formControlName="phone" placeholder="(11) 99999-9999" class="w-full" />
+    </div>
+
+    <!-- Error message -->
+    @if (errorMessage()) {
+      <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-700">
+        <i class="pi pi-exclamation-circle"></i>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Submit -->
+    <p-button type="submit" [label]="isEdit() ? 'Salvar' : 'Criar cliente'" [loading]="loading()" [disabled]="form.invalid || loading()" styleClass="w-full" />
+  </form>
+</p-dialog>
