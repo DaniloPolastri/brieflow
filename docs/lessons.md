@@ -8,10 +8,9 @@
 - **Regra:** ANTES de escrever qualquer HTML/template/estilo de componente Angular, invocar `frontend-design`. Sem exceções — mesmo que o plano já tenha o template pronto, mesmo que a task seja delegada a subagente. O subagente NÃO substitui a skill de design. A skill deve ser invocada pelo orquestrador ANTES de despachar o subagente implementador
 - **Contexto:** Toda task que cria ou modifica interface visual (pages, modais, formulários, cards, dashboards). Inclui tasks delegadas via subagent-driven-development
 
-## [Geral] — Marcar tasks no plano em tempo real e executar parallel groups em paralelo
-- **Erro:** Executei tasks do PARALLEL GROUP A sequencialmente e não marquei `[x]` no plano conforme completava cada task
-- **Regra:** (1) Ao completar cada task, marcar imediatamente `[x]` no arquivo do plano e commitar. (2) Tasks no mesmo `⚡ PARALLEL GROUP` DEVEM ser despachadas em paralelo via agentes simultâneos. Nunca executar sequencialmente tasks marcadas como paralelas.
-- **Contexto:** Toda execução de plano de implementação — vale para subagent-driven-development e executing-plans
+## [Geral] — PROMOVIDA para regra formal no CLAUDE.md (seção Fluxo de Implementação)
+- **Status:** Lição promovida após 3ª violação. Regra agora está no CLAUDE.md como obrigatória e inegociável.
+- **Regra original:** Marcar `[x]` no plano imediatamente ao completar cada task + executar parallel groups em paralelo.
 
 ## [Angular] — Usar templateUrl com arquivo HTML separado
 - **Erro:** Coloquei templates grandes (50+ linhas) inline no `template:` do componente, deixando o .ts verboso e difícil de ler

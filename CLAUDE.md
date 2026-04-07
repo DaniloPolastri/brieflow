@@ -257,6 +257,7 @@ Este projeto usa um arquivo `docs/lessons.md` como memória persistente de erros
 
 **Regras:**
 - Toda execução de plano DEVE começar criando uma branch `feature/<nome>` a partir de `main`.
+- **OBRIGATÓRIO — Marcar progresso no plano em tempo real:** Ao completar cada task, marcar IMEDIATAMENTE `[x]` no arquivo do plano (`docs/plan/`) e fazer commit. NÃO esperar a próxima task, NÃO acumular marcações. Isso é a garantia de retomada se a sessão for interrompida. Violação recorrente — esta é regra formal e inegociável.
 - Ao terminar a execução do plano, SEMPRE invocar `requesting-code-review` antes de qualquer merge/PR.
 - Após receber o review, usar `receiving-code-review` para processar o feedback.
 - Finalizar com `finishing-a-development-branch` para decidir como integrar o trabalho.
