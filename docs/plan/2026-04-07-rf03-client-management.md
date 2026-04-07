@@ -27,7 +27,7 @@
 
 ### Client-Member Assignment (added post-plan)
 - [x] Task B6: Migration V7 + ClientMember entity + repository + service + controller + tests
-- [ ] Task F5: Frontend — update model, service, and UI for member assignment
+- [x] Task F5: Frontend — update model, service, and UI for member assignment
 
 Nenhuma task frontend-backend paralelizável — backend deve estar pronto antes do frontend consumir.
 
