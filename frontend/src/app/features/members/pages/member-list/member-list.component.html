@@ -55,7 +55,15 @@
                 <div class="text-[12px] text-gray-400">Expira em {{ formatExpiresAt(invite.expiresAt) }}</div>
               </div>
             </div>
-            <p-tag value="Pendente" severity="warn" />
+            <div class="flex items-center gap-2">
+              <p-button icon="pi pi-copy"
+                        [text]="true"
+                        severity="secondary"
+                        pTooltip="Copiar link de convite"
+                        tooltipPosition="top"
+                        (onClick)="copyInviteLink(invite.inviteLink)" />
+              <p-tag value="Pendente" severity="warn" />
+            </div>
           </div>
         }
       </div>

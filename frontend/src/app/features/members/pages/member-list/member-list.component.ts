@@ -10,6 +10,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService } from 'primeng/api';
 import { MemberApiService } from '../../services/member-api.service';
 import { StorageService } from '../../../../core/services/storage.service';
@@ -26,7 +27,7 @@ import { InviteMemberDialogComponent } from '../../components/invite-member-dial
 @Component({
   selector: 'app-member-list',
   standalone: true,
-  imports: [TableModule, ButtonModule, TagModule, ConfirmDialogModule, InviteMemberDialogComponent],
+  imports: [TableModule, ButtonModule, TagModule, ConfirmDialogModule, TooltipModule, InviteMemberDialogComponent],
   templateUrl: './member-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ConfirmationService],
@@ -110,6 +111,12 @@ export class MemberListComponent implements OnInit {
       default:
         return 'info';
     }
+  }
+
+  copyInviteLink(link: string): void {
+    navigator.clipboard.writeText(link).then(() => {
+      // Feedback visual handled by tooltip
+    });
   }
 
   formatExpiresAt(isoDate: string): string {
