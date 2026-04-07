@@ -10,6 +10,8 @@ import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
 import com.briefflow.exception.UnauthorizedException;
+import com.briefflow.mapper.AuthMapper;
+import com.briefflow.mapper.InviteMapper;
 import com.briefflow.repository.*;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.InviteService;
@@ -19,14 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class InviteServiceImpl implements InviteService {
-
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     private final MemberRepository memberRepository;
     private final InviteTokenRepository inviteTokenRepository;
@@ -35,6 +34,8 @@ public class InviteServiceImpl implements InviteService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthMapper authMapper;
+    private final InviteMapper inviteMapper;
     private final String frontendUrl;
 
     public InviteServiceImpl(MemberRepository memberRepository,
@@ -44,6 +45,8 @@ public class InviteServiceImpl implements InviteService {
                              JwtService jwtService,
                              PasswordEncoder passwordEncoder,
                              RefreshTokenRepository refreshTokenRepository,
+                             AuthMapper authMapper,
+                             InviteMapper inviteMapper,
                              @Value("${app.frontend-url}") String frontendUrl) {
         this.memberRepository = memberRepository;
         this.inviteTokenRepository = inviteTokenRepository;
@@ -52,6 +55,8 @@ public class InviteServiceImpl implements InviteService {
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.authMapper = authMapper;
+        this.inviteMapper = inviteMapper;
         this.frontendUrl = frontendUrl;
     }
 
@@ -105,14 +110,7 @@ public class InviteServiceImpl implements InviteService {
 
         String inviteLink = frontendUrl + "/auth/accept-invite?token=" + inviteToken.getToken();
 
-        return new InviteTokenResponseDTO(
-                inviteToken.getId(),
-                inviteToken.getEmail(),
-                inviteToken.getRole().name(),
-                inviteToken.getPosition().name(),
-                inviteLink,
-                inviteToken.getExpiresAt().format(ISO_FORMATTER)
-        );
+        return inviteMapper.toTokenResponseDTO(inviteToken, inviteLink);
     }
 
     @Override
@@ -147,14 +145,7 @@ public class InviteServiceImpl implements InviteService {
 
         boolean userExists = userRepository.findByEmail(inviteToken.getEmail()).isPresent();
 
-        return new InviteInfoResponseDTO(
-                inviteToken.getWorkspace().getName(),
-                inviteToken.getEmail(),
-                inviteToken.getRole().name(),
-                inviteToken.getPosition().name(),
-                inviteToken.getInvitedBy().getName(),
-                userExists
-        );
+        return inviteMapper.toInfoResponseDTO(inviteToken, userExists);
     }
 
     @Override
@@ -216,15 +207,7 @@ public class InviteServiceImpl implements InviteService {
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshTokenRepository.save(refreshToken);
 
-        UserInfoDTO userInfo = new UserInfoDTO(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                member.getWorkspace().getId(),
-                member.getWorkspace().getName(),
-                member.getRole().name(),
-                member.getPosition().name()
-        );
+        UserInfoDTO userInfo = authMapper.toUserInfoDTO(user, member);
 
         return new TokenResponseDTO(
                 accessToken,

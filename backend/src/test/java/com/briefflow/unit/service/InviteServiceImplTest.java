@@ -8,9 +8,12 @@ import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.UnauthorizedException;
+import com.briefflow.mapper.AuthMapper;
+import com.briefflow.mapper.InviteMapper;
 import com.briefflow.repository.*;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.impl.InviteServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,15 +39,46 @@ class InviteServiceImplTest {
     @Mock private JwtService jwtService;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private RefreshTokenRepository refreshTokenRepository;
+    @Mock private AuthMapper authMapper;
+    @Mock private InviteMapper inviteMapper;
 
     private InviteServiceImpl inviteService;
 
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     void setUp() {
         inviteService = new InviteServiceImpl(
                 memberRepository, inviteTokenRepository, workspaceRepository,
                 userRepository, jwtService, passwordEncoder,
-                refreshTokenRepository, "http://localhost:4200");
+                refreshTokenRepository, authMapper, inviteMapper,
+                "http://localhost:4200");
+
+        lenient().when(authMapper.toUserInfoDTO(any(User.class), any(Member.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            Member m = inv.getArgument(1);
+            return new com.briefflow.dto.auth.UserInfoDTO(
+                    u.getId(), u.getName(), u.getEmail(),
+                    m.getWorkspace().getId(), m.getWorkspace().getName(),
+                    m.getRole().name(), m.getPosition().name()
+            );
+        });
+
+        lenient().when(inviteMapper.toTokenResponseDTO(any(InviteToken.class), anyString())).thenAnswer(inv -> {
+            InviteToken t = inv.getArgument(0);
+            String link = inv.getArgument(1);
+            return new InviteTokenResponseDTO(
+                    t.getId(), t.getEmail(), t.getRole().name(), t.getPosition().name(),
+                    link, t.getExpiresAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            );
+        });
+
+        lenient().when(inviteMapper.toInfoResponseDTO(any(InviteToken.class), anyBoolean())).thenAnswer(inv -> {
+            InviteToken t = inv.getArgument(0);
+            boolean exists = inv.getArgument(1);
+            return new InviteInfoResponseDTO(
+                    t.getWorkspace().getName(), t.getEmail(), t.getRole().name(),
+                    t.getPosition().name(), t.getInvitedBy().getName(), exists
+            );
+        });
     }
 
     // --- inviteMember ---

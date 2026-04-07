@@ -6,6 +6,7 @@ import com.briefflow.enums.MemberPosition;
 import com.briefflow.enums.MemberRole;
 import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
+import com.briefflow.mapper.InviteMapper;
 import com.briefflow.mapper.MemberMapper;
 import com.briefflow.repository.*;
 import com.briefflow.service.impl.MemberServiceImpl;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +32,7 @@ class MemberServiceImplTest {
     @Mock private InviteTokenRepository inviteTokenRepository;
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private MemberMapper memberMapper;
+    @Mock private InviteMapper inviteMapper;
 
     private MemberServiceImpl memberService;
 
@@ -37,7 +40,7 @@ class MemberServiceImplTest {
     void setUp() {
         memberService = new MemberServiceImpl(
                 memberRepository, inviteTokenRepository, refreshTokenRepository,
-                memberMapper, "http://localhost:4200");
+                memberMapper, inviteMapper, "http://localhost:4200");
 
         lenient().when(memberMapper.toResponseDTO(any(Member.class))).thenAnswer(inv -> {
             Member m = inv.getArgument(0);
@@ -49,6 +52,15 @@ class MemberServiceImplTest {
                     m.getRole().name(),
                     m.getPosition().name(),
                     m.getCreatedAt().toString()
+            );
+        });
+
+        lenient().when(inviteMapper.toTokenResponseDTO(any(InviteToken.class), anyString())).thenAnswer(inv -> {
+            InviteToken t = inv.getArgument(0);
+            String link = inv.getArgument(1);
+            return new InviteTokenResponseDTO(
+                    t.getId(), t.getEmail(), t.getRole().name(), t.getPosition().name(),
+                    link, t.getExpiresAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             );
         });
     }

@@ -14,6 +14,7 @@ import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.RefreshTokenRepository;
 import com.briefflow.repository.UserRepository;
 import com.briefflow.repository.WorkspaceRepository;
+import com.briefflow.mapper.AuthMapper;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.AuthService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,19 +33,22 @@ public class AuthServiceImpl implements AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuthMapper authMapper;
 
     public AuthServiceImpl(UserRepository userRepository,
                            RefreshTokenRepository refreshTokenRepository,
                            WorkspaceRepository workspaceRepository,
                            MemberRepository memberRepository,
                            PasswordEncoder passwordEncoder,
-                           JwtService jwtService) {
+                           JwtService jwtService,
+                           AuthMapper authMapper) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.workspaceRepository = workspaceRepository;
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.authMapper = authMapper;
     }
 
     @Override
@@ -149,15 +153,7 @@ public class AuthServiceImpl implements AuthService {
         refreshToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         refreshTokenRepository.save(refreshToken);
 
-        UserInfoDTO userInfo = new UserInfoDTO(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                member.getWorkspace().getId(),
-                member.getWorkspace().getName(),
-                member.getRole().name(),
-                member.getPosition().name()
-        );
+        UserInfoDTO userInfo = authMapper.toUserInfoDTO(user, member);
 
         return new TokenResponseDTO(
                 accessToken,

@@ -14,8 +14,10 @@ import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.RefreshTokenRepository;
 import com.briefflow.repository.UserRepository;
 import com.briefflow.repository.WorkspaceRepository;
+import com.briefflow.mapper.AuthMapper;
 import com.briefflow.security.JwtService;
 import com.briefflow.service.impl.AuthServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,8 +42,22 @@ class AuthServiceImplTest {
     @Mock private MemberRepository memberRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private AuthMapper authMapper;
 
     @InjectMocks private AuthServiceImpl authService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(authMapper.toUserInfoDTO(any(User.class), any(Member.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            Member m = inv.getArgument(1);
+            return new UserInfoDTO(
+                    u.getId(), u.getName(), u.getEmail(),
+                    m.getWorkspace().getId(), m.getWorkspace().getName(),
+                    m.getRole().name(), m.getPosition().name()
+            );
+        });
+    }
 
     @Test
     void should_register_when_validRequest() {
