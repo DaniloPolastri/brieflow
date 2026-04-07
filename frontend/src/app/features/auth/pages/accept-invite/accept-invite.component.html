@@ -20,11 +20,11 @@
         </div>
         <div class="flex justify-between">
           <span class="text-indigo-600">Papel</span>
-          <span class="font-medium text-indigo-900">{{ roleLabels[inviteInfo()!.role] ?? inviteInfo()!.role }}</span>
+          <span class="font-medium text-indigo-900">{{ getRoleLabel(inviteInfo()!.role) }}</span>
         </div>
         <div class="flex justify-between">
           <span class="text-indigo-600">Cargo</span>
-          <span class="font-medium text-indigo-900">{{ positionLabels[inviteInfo()!.position] ?? inviteInfo()!.position }}</span>
+          <span class="font-medium text-indigo-900">{{ getPositionLabel(inviteInfo()!.position) }}</span>
         </div>
         <div class="flex justify-between">
           <span class="text-indigo-600">Convidado por</span>

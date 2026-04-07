@@ -24,8 +24,8 @@ export class AcceptInviteComponent implements OnInit {
   private readonly storage = inject(StorageService);
   private readonly fb = inject(FormBuilder);
 
-  readonly roleLabels: Record<string, string> = MEMBER_ROLE_LABELS as Record<MemberRole, string>;
-  readonly positionLabels: Record<string, string> = MEMBER_POSITION_LABELS as Record<MemberPosition, string>;
+  private readonly roleLabels: Record<string, string> = MEMBER_ROLE_LABELS as Record<string, string>;
+  private readonly positionLabels: Record<string, string> = MEMBER_POSITION_LABELS as Record<string, string>;
 
   readonly loading = signal(false);
   readonly loadingInfo = signal(true);
@@ -86,5 +86,13 @@ export class AcceptInviteComponent implements OnInit {
         this.errorMessage.set(err.error?.message ?? 'Erro ao aceitar convite');
       },
     });
+  }
+
+  getRoleLabel(role: string): string {
+    return this.roleLabels[role] || role;
+  }
+
+  getPositionLabel(position: string): string {
+    return this.positionLabels[position] || position;
   }
 }
