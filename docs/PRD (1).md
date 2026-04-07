@@ -222,6 +222,25 @@ A solução é composta por:
 
 O frontend consumirá a API backend via HTTP. O portal de aprovação do cliente é uma rota pública do mesmo frontend Angular, autenticada por token único no link.
 
+### Modelo de Acesso — Quem está dentro e quem está fora
+
+O BriefFlow tem dois contextos de acesso completamente separados:
+
+**1. Painel da Agência (autenticado via JWT)**
+- Acessado por membros do workspace: OWNER, MANAGER e CREATIVE
+- Esses são os **funcionários da agência** — designers, editores, gestores
+- Requer cadastro (email/senha) e vínculo a um workspace
+- Toda a gestão acontece aqui: clientes, jobs, kanban, dashboard
+
+**2. Portal de Aprovação (acesso público via token UUID)**
+- Acessado pelo **cliente da agência** — a empresa/pessoa atendida
+- O cliente **não tem conta** no BriefFlow e **nunca é membro** do workspace
+- Acessa via link único enviado por email (ex: `/approval/{token}`)
+- Escopo limitado: visualizar a peça e aprovar ou solicitar revisão
+- Sem login, sem senha, sem cadastro
+
+**A entidade "Client" (RF03) é um cadastro interno da agência.** Representa o cliente atendido (nome, empresa, contato) para organizar jobs. O cliente real só interage com o sistema pelo Portal de Aprovação (RF07), sem conhecer o painel interno.
+
 ---
 
 ## Features Principais
