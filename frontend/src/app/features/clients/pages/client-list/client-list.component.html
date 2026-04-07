@@ -1,0 +1,144 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-[22px] font-semibold tracking-tight text-gray-900">Clientes</h1>
+      <p class="mt-1 text-[14px] text-gray-500">Gerencie os clientes do seu workspace.</p>
+    </div>
+    @if (canManage) {
+      <p-button label="Novo cliente" icon="pi pi-plus" (onClick)="openCreateDialog()" />
+    }
+  </div>
+
+  <!-- Filters -->
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+    <div class="relative flex-1">
+      <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      <input
+        type="text"
+        pInputText
+        placeholder="Buscar clientes..."
+        class="w-full pl-10"
+        (input)="onSearchInput($event)"
+      />
+    </div>
+    <p-selectButton
+      [options]="statusOptions"
+      [(ngModel)]="statusFilter"
+      optionLabel="label"
+      optionValue="value"
+      (onChange)="onStatusFilterChange()"
+    />
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading() && clients().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <i class="pi pi-users mb-4 text-4xl text-gray-300"></i>
+      @if (searchTerm()) {
+        <p class="text-[15px] font-medium text-gray-600">Nenhum cliente encontrado</p>
+        <p class="mt-1 text-[13px] text-gray-400">Tente buscar com outros termos.</p>
+      } @else {
+        <p class="text-[15px] font-medium text-gray-600">Nenhum cliente encontrado</p>
+        <p class="mt-1 text-[13px] text-gray-400">Comece adicionando seu primeiro cliente.</p>
+        @if (canManage) {
+          <p-button
+            label="Novo cliente"
+            icon="pi pi-plus"
+            class="mt-4"
+            (onClick)="openCreateDialog()"
+          />
+        }
+      }
+    </div>
+  }
+
+  <!-- Cards grid -->
+  @if (!loading() && clients().length > 0) {
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      @for (client of clients(); track client.id) {
+        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-xs hover:shadow-sm transition-shadow">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <!-- Avatar -->
+              @if (client.logoUrl) {
+                <img
+                  [src]="client.logoUrl"
+                  [alt]="client.name"
+                  class="h-10 w-10 rounded-full object-cover"
+                />
+              } @else {
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-full text-[13px] font-medium"
+                  [class]="getAvatarColor(client.name)"
+                >
+                  {{ getInitials(client.name) }}
+                </div>
+              }
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[14px] font-medium text-gray-900">{{ client.name }}</span>
+                  <span
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                    [class]="client.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'"
+                  >
+                    {{ client.active ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </div>
+                @if (client.company) {
+                  <p class="mt-0.5 max-w-[180px] truncate text-[12px] text-gray-500">{{ client.company }}</p>
+                }
+              </div>
+            </div>
+            <!-- Menu button -->
+            @if (canManage) {
+              <p-button
+                data-testid="client-menu-button"
+                icon="pi pi-ellipsis-v"
+                [text]="true"
+                severity="secondary"
+                [rounded]="true"
+                size="small"
+                (onClick)="menu.toggle($event)"
+              />
+              <p-menu #menu [popup]="true" [model]="getMenuItems(client)" />
+            }
+          </div>
+
+          <!-- Contact info -->
+          <div class="mt-3 space-y-1">
+            @if (client.email) {
+              <div class="flex items-center gap-2 text-[12px] text-gray-500">
+                <i class="pi pi-envelope text-[11px]"></i>
+                <span>{{ client.email }}</span>
+              </div>
+            }
+            @if (client.phone) {
+              <div class="flex items-center gap-2 text-[12px] text-gray-500">
+                <i class="pi pi-phone text-[11px]"></i>
+                <span>{{ client.phone }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Form dialog -->
+  <app-client-form-dialog
+    [(visible)]="showFormDialog"
+    [client]="editingClient()"
+    (saved)="loadClients()"
+  />
+
+  <!-- Confirm dialog -->
+  <p-confirmDialog />
+</div>
