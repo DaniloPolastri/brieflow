@@ -218,7 +218,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public InviteInfoResponseDTO getInviteInfo(String token) {
-        InviteToken inviteToken = inviteTokenRepository.findByToken(token)
+        InviteToken inviteToken = inviteTokenRepository.findByTokenWithDetails(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Convite nao encontrado"));
 
         if (!inviteToken.isUsable()) {
@@ -240,7 +240,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional
     public TokenResponseDTO acceptInvite(String token, AcceptInviteRequestDTO request) {
-        InviteToken inviteToken = inviteTokenRepository.findByToken(token)
+        InviteToken inviteToken = inviteTokenRepository.findByTokenWithDetails(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Convite nao encontrado"));
 
         if (!inviteToken.isUsable()) {

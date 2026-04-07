@@ -242,7 +242,7 @@ class MemberServiceImplTest {
         inviteToken.setExpiresAt(LocalDateTime.now().plusHours(48));
         inviteToken.setUsed(false);
 
-        when(inviteTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(inviteToken));
+        when(inviteTokenRepository.findByTokenWithDetails("valid-token")).thenReturn(Optional.of(inviteToken));
         when(userRepository.findByEmail("new@test.com")).thenReturn(Optional.empty());
 
         InviteInfoResponseDTO result = memberService.getInviteInfo("valid-token");
@@ -261,7 +261,7 @@ class MemberServiceImplTest {
         inviteToken.setUsed(true);
         inviteToken.setExpiresAt(LocalDateTime.now().plusHours(48));
 
-        when(inviteTokenRepository.findByToken("used-token")).thenReturn(Optional.of(inviteToken));
+        when(inviteTokenRepository.findByTokenWithDetails("used-token")).thenReturn(Optional.of(inviteToken));
 
         assertThrows(BusinessException.class, () -> memberService.getInviteInfo("used-token"));
     }
@@ -284,7 +284,7 @@ class MemberServiceImplTest {
         inviteToken.setExpiresAt(LocalDateTime.now().plusHours(48));
         inviteToken.setUsed(false);
 
-        when(inviteTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(inviteToken));
+        when(inviteTokenRepository.findByTokenWithDetails("valid-token")).thenReturn(Optional.of(inviteToken));
         when(userRepository.findByEmail("new@test.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password123")).thenReturn("hashed");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
@@ -332,7 +332,7 @@ class MemberServiceImplTest {
         inviteToken.setExpiresAt(LocalDateTime.now().plusHours(48));
         inviteToken.setUsed(false);
 
-        when(inviteTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(inviteToken));
+        when(inviteTokenRepository.findByTokenWithDetails("valid-token")).thenReturn(Optional.of(inviteToken));
         when(userRepository.findByEmail("existing@test.com")).thenReturn(Optional.of(existingUser));
         when(passwordEncoder.matches("password123", "hashed-pass")).thenReturn(true);
         when(memberRepository.existsByUserIdAndWorkspaceId(3L, 1L)).thenReturn(false);
