@@ -29,6 +29,10 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'clients',
+        loadChildren: () => import('./features/clients/clients.routes'),
+      },
+      {
         path: 'members',
         loadChildren: () => import('./features/members/members.routes'),
       },
