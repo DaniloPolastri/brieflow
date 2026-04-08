@@ -86,3 +86,18 @@
 - **Erro:** Fiz refatoração (MapStruct mappers) direto na `main` sem criar branch, violando a regra do CLAUDE.md
 - **Regra:** Toda alteração de código — feature, fix OU refactor — DEVE começar criando branch: `feature/*`, `fix/*` ou `refactor/*`. Nunca codar direto na `main`. Criar a branch é o PRIMEIRO passo, antes de qualquer edição
 - **Contexto:** Qualquer sessão de implementação, refatoração ou correção de bug
+
+## [API] — Endpoints que recebem lista de IDs devem sincronizar, não apenas adicionar
+- **Erro:** `assignMembers` recebia lista de memberIds mas só adicionava novos, nunca removia os antigos. Quando o frontend enviava a lista desejada, os membros desmarcados permaneciam
+- **Regra:** Se um endpoint recebe a "lista desejada" de relações many-to-many, implementar como sync (delete existentes + insert novos). Se quer apenas adicionar, o endpoint deve se chamar `addMembers` e ter um `removeMembers` separado
+- **Contexto:** Qualquer endpoint que gerencia relações many-to-many via lista de IDs
+
+## [JPA] — Derived delete methods no Spring Data precisam de @Modifying
+- **Erro:** `deleteByClientIdAndMemberId` no repository não tinha `@Modifying`, causando potencial `InvalidDataAccessApiUsageException`
+- **Regra:** Toda operação de delete/update derivada ou custom no Spring Data JPA DEVE ter `@Modifying` na assinatura
+- **Contexto:** Todos os repositories com métodos `deleteBy*` ou `@Query` de escrita
+
+## [Spring] — Validar elementos de listas em DTOs de request
+- **Erro:** `AssignMembersRequestDTO` aceitava `List<Long>` sem `@NotNull` nos elementos. Lista `[null, 5, null]` passava validação e causava NPE no service
+- **Regra:** Em DTOs com listas, SEMPRE anotar os elementos: `List<@NotNull Long>`. Isso rejeita null na camada de validação
+- **Contexto:** Todos os DTOs de request que recebem listas de IDs ou valores
