@@ -23,7 +23,7 @@
 - [x] Task B5: Entities Job + JobFile (depende de B1, B2, B4)
 - [x] Task B6: JobRepository + JobFileRepository + JobSpecifications (depende de B5)
 - [x] Task B7: JobMapper (MapStruct) + helpers (depende de B5, B3) ⚡ PARALLEL GROUP B
-- [ ] Task B8: BriefingValidator (Strategy Pattern) + 7 TypeBriefingValidator impls (depende de B1) ⚡ PARALLEL GROUP B
+- [x] Task B8: BriefingValidator (Strategy Pattern) + 7 TypeBriefingValidator impls (depende de B1) ⚡ PARALLEL GROUP B
 - [ ] Task B9: JobService interface + JobServiceImpl (depende de B6, B7, B8)
 - [ ] Task B10: JobController + 8 endpoints REST (depende de B9)
 - [ ] Task B11: Integration test JobRepositoryTest — Testcontainers (depende de B6) ⚡ PARALLEL GROUP C
