@@ -31,8 +31,8 @@
 
 ### Frontend (F1–F23)
 
-- [ ] Task F1: Criar `job.model.ts` (interfaces + unions + filtros) ⚡ PARALLEL GROUP D
-- [ ] Task F2: Criar `briefing-schemas.ts` (BRIEFING_SCHEMAS com 7 tipos) ⚡ PARALLEL GROUP D
+- [x] Task F1: Criar `job.model.ts` (interfaces + unions + filtros) ⚡ PARALLEL GROUP D
+- [x] Task F2: Criar `briefing-schemas.ts` (BRIEFING_SCHEMAS com 7 tipos) ⚡ PARALLEL GROUP D
 - [ ] Task F3: Criar `JobApiService` com todos os endpoints (depende de F1 + **B10 backend**)
 - [ ] Task F4: Criar `jobs.routes.ts` com 4 rotas e `roleGuard` em new/edit (depende de F3)
 - [ ] Task F5: Registrar rota lazy `jobs` em `app.routes.ts` (depende de F4)
