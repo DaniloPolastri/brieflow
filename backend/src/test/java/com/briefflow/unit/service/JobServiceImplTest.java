@@ -11,6 +11,7 @@ import com.briefflow.enums.JobPriority;
 import com.briefflow.enums.JobStatus;
 import com.briefflow.enums.JobType;
 import com.briefflow.enums.MemberRole;
+import com.briefflow.exception.BusinessException;
 import com.briefflow.exception.ForbiddenException;
 import com.briefflow.exception.ResourceNotFoundException;
 import com.briefflow.mapper.JobMapper;
@@ -97,6 +98,55 @@ class JobServiceImplTest {
                 Map.of("captionText", "c", "format", "1:1"));
 
         assertThrows(ForbiddenException.class, () -> service.createJob(workspaceId, userId, req));
+        verify(jobRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwBusinessException_when_clientIsInactive() {
+        Long userId = 1L, workspaceId = 2L;
+        Member manager = createMember(10L, userId, workspaceId, MemberRole.MANAGER);
+        Client inactive = createClient(100L, workspaceId);
+        inactive.setActive(false);
+        when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(manager));
+        when(clientRepository.findByIdAndWorkspaceId(100L, workspaceId)).thenReturn(Optional.of(inactive));
+
+        JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
+                Map.of("captionText", "c", "format", "1:1"));
+
+        assertThrows(BusinessException.class, () -> service.createJob(workspaceId, userId, req));
+        verify(jobRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwBusinessException_when_assignedCreativeNotOnClient() {
+        Long userId = 1L, workspaceId = 2L;
+        Member manager = createMember(10L, userId, workspaceId, MemberRole.MANAGER);
+        Member creative = createMember(20L, 99L, workspaceId, MemberRole.CREATIVE);
+        when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(manager));
+        when(clientRepository.findByIdAndWorkspaceId(100L, workspaceId)).thenReturn(Optional.of(createClient(100L, workspaceId)));
+        when(memberRepository.findByIdAndWorkspaceId(20L, workspaceId)).thenReturn(Optional.of(creative));
+        when(clientMemberRepository.existsByClientIdAndMemberId(100L, 20L)).thenReturn(false);
+
+        JobRequestDTO req = new JobRequestDTO(100L, 20L, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
+                Map.of("captionText", "c", "format", "1:1"));
+
+        assertThrows(BusinessException.class, () -> service.createJob(workspaceId, userId, req));
+        verify(jobRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwBusinessException_when_assignedCreativeHasManagerRole() {
+        Long userId = 1L, workspaceId = 2L;
+        Member manager = createMember(10L, userId, workspaceId, MemberRole.MANAGER);
+        Member otherManager = createMember(20L, 99L, workspaceId, MemberRole.MANAGER);
+        when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(manager));
+        when(clientRepository.findByIdAndWorkspaceId(100L, workspaceId)).thenReturn(Optional.of(createClient(100L, workspaceId)));
+        when(memberRepository.findByIdAndWorkspaceId(20L, workspaceId)).thenReturn(Optional.of(otherManager));
+
+        JobRequestDTO req = new JobRequestDTO(100L, 20L, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
+                Map.of("captionText", "c", "format", "1:1"));
+
+        assertThrows(BusinessException.class, () -> service.createJob(workspaceId, userId, req));
         verify(jobRepository, never()).save(any());
     }
 

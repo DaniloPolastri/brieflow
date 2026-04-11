@@ -90,11 +90,15 @@ public class JobServiceImpl implements JobService {
 
         Client client = clientRepository.findByIdAndWorkspaceId(req.clientId(), workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+        if (client.getActive() == null || !client.getActive()) {
+            throw new BusinessException("Cliente está inativo");
+        }
 
         Member assignedCreative = null;
         if (req.assignedCreativeId() != null) {
             assignedCreative = memberRepository.findByIdAndWorkspaceId(req.assignedCreativeId(), workspaceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Membro designado não encontrado"));
+            validateAssignedCreative(assignedCreative, req.clientId());
         }
 
         User creator = userRepository.findById(userId)
@@ -191,6 +195,9 @@ public class JobServiceImpl implements JobService {
         if (!job.getClient().getId().equals(req.clientId())) {
             Client client = clientRepository.findByIdAndWorkspaceId(req.clientId(), workspaceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
+            if (client.getActive() == null || !client.getActive()) {
+                throw new BusinessException("Cliente está inativo");
+            }
             job.setClient(client);
         }
 
@@ -200,7 +207,11 @@ public class JobServiceImpl implements JobService {
                 || !job.getAssignedCreative().getId().equals(req.assignedCreativeId())) {
             Member m = memberRepository.findByIdAndWorkspaceId(req.assignedCreativeId(), workspaceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Membro não encontrado"));
+            validateAssignedCreative(m, req.clientId());
             job.setAssignedCreative(m);
+        } else {
+            // Same creative, but client may have changed — re-validate membership
+            validateAssignedCreative(job.getAssignedCreative(), req.clientId());
         }
 
         job.setTitle(req.title());
@@ -285,6 +296,15 @@ public class JobServiceImpl implements JobService {
         JobFile file = jobFileRepository.findByIdAndJobId(fileId, job.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Arquivo não encontrado"));
         return fileStorageService.load("/uploads/jobs/" + job.getId() + "/" + file.getStoredFilename());
+    }
+
+    private void validateAssignedCreative(Member assignedCreative, Long clientId) {
+        if (assignedCreative.getRole() != MemberRole.CREATIVE) {
+            throw new BusinessException("Membro designado deve ser CREATIVE");
+        }
+        if (!clientMemberRepository.existsByClientIdAndMemberId(clientId, assignedCreative.getId())) {
+            throw new BusinessException("Criativo não está atribuído a este cliente");
+        }
     }
 
     private Member requireMember(Long userId, Long workspaceId) {
