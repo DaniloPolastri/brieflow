@@ -34,9 +34,9 @@
 - [x] Task F1: Criar `job.model.ts` (interfaces + unions + filtros) ⚡ PARALLEL GROUP D
 - [x] Task F2: Criar `briefing-schemas.ts` (BRIEFING_SCHEMAS com 7 tipos) ⚡ PARALLEL GROUP D
 - [x] Task F3: Criar `JobApiService` com todos os endpoints (depende de F1 + **B10 backend**)
-- [ ] Task F4: Criar `jobs.routes.ts` com 4 rotas e `roleGuard` em new/edit (depende de F3)
-- [ ] Task F5: Registrar rota lazy `jobs` em `app.routes.ts` (depende de F4)
-- [ ] Task F6: Adicionar item "Jobs" no `SidebarComponent` (depende de F5)
+- [x] Task F4: Criar `jobs.routes.ts` com 4 rotas e `roleGuard` em new/edit (depende de F3)
+- [x] Task F5: Registrar rota lazy `jobs` em `app.routes.ts` (depende de F4)
+- [x] Task F6: Adicionar item "Jobs" no `SidebarComponent` (depende de F5)
 - [ ] Task F7: Invocar `frontend-design` para `JobListComponent`
 - [ ] Task F8: Implementar `JobListComponent` (depende de F3, F7)
 - [ ] Task F9: Invocar `frontend-design` para `BriefingFieldsComponent`
