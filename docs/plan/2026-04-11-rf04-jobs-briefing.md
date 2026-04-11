@@ -5215,3 +5215,9 @@ git commit -m "fix(frontend): smoke test adjustments for RF04"
 - [x] `provideHttpClientTesting()` em specs de service
 
 ---
+
+## Post-Review Fixes (2026-04-11)
+
+Code review identified 5 critical and 4 important issues. All fixed in commits `fix(jobs):*` above.
+Key lessons added to `docs/lessons.md`: [API] contract verification, [API] query param testing, [Plan] polymorphic validator happy-path coverage.
+
