@@ -17,8 +17,5 @@ public class CarrosselBriefingValidator implements TypeBriefingValidator {
         int count = n.intValue();
         if (count < 2 || count > 10)
             throw new BusinessException("CARROSSEL: slideCount deve estar entre 2 e 10");
-        String caption = (String) d.get("caption");
-        if (caption == null || caption.isBlank())
-            throw new BusinessException("CARROSSEL: caption é obrigatório");
     }
 }

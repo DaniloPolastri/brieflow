@@ -61,19 +61,25 @@ class BriefingValidatorTest {
 
     @Test
     void should_acceptValidCarrossel() {
-        Map<String, Object> data = Map.of("slideCount", 5, "caption", "c");
+        Map<String, Object> data = Map.of("slideCount", 5);
+        assertDoesNotThrow(() -> validator.validate(JobType.CARROSSEL, data));
+    }
+
+    @Test
+    void should_acceptMinimalCarrossel_whenOnlySlideCountProvided() {
+        Map<String, Object> data = Map.of("slideCount", 5);
         assertDoesNotThrow(() -> validator.validate(JobType.CARROSSEL, data));
     }
 
     @Test
     void should_rejectCarrossel_when_slideCountBelow2() {
-        Map<String, Object> data = Map.of("slideCount", 1, "caption", "c");
+        Map<String, Object> data = Map.of("slideCount", 1);
         assertThrows(BusinessException.class, () -> validator.validate(JobType.CARROSSEL, data));
     }
 
     @Test
     void should_rejectCarrossel_when_slideCountAbove10() {
-        Map<String, Object> data = Map.of("slideCount", 11, "caption", "c");
+        Map<String, Object> data = Map.of("slideCount", 11);
         assertThrows(BusinessException.class, () -> validator.validate(JobType.CARROSSEL, data));
     }
 
