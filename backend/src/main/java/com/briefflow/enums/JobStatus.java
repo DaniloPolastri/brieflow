@@ -3,8 +3,8 @@ package com.briefflow.enums;
 public enum JobStatus {
     NOVO,
     EM_CRIACAO,
-    REVISAO,
+    REVISAO_INTERNA,
     AGUARDANDO_APROVACAO,
     APROVADO,
-    ARCHIVED
+    PUBLICADO
 }

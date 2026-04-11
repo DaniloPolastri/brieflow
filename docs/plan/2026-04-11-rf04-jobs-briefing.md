@@ -229,10 +229,10 @@ package com.briefflow.enums;
 public enum JobStatus {
     NOVO,
     EM_CRIACAO,
-    REVISAO,
+    REVISAO_INTERNA,
     AGUARDANDO_APROVACAO,
     APROVADO,
-    ARCHIVED
+    PUBLICADO
 }
 ```
 
@@ -277,12 +277,14 @@ CREATE TABLE jobs (
     status VARCHAR(32) NOT NULL DEFAULT 'NOVO',
     due_date DATE,
     briefing_data JSONB,
+    archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT uk_jobs_workspace_number UNIQUE (workspace_id, job_number)
 );
 
 CREATE INDEX idx_jobs_workspace_id ON jobs(workspace_id);
+CREATE INDEX idx_jobs_workspace_archived ON jobs(workspace_id, archived);
 CREATE INDEX idx_jobs_client_id ON jobs(client_id);
 CREATE INDEX idx_jobs_assigned_to ON jobs(assigned_to_id);
 CREATE INDEX idx_jobs_status ON jobs(workspace_id, status);
@@ -321,6 +323,7 @@ git commit -m "feat(jobs): migration V8 — jobs, job_files, workspaces.job_coun
 - Create: `backend/src/main/java/com/briefflow/dto/job/JobFileDTO.java`
 - Create: `backend/src/main/java/com/briefflow/dto/job/ClientSummaryDTO.java`
 - Create: `backend/src/main/java/com/briefflow/dto/job/MemberSummaryDTO.java`
+- Create: `backend/src/main/java/com/briefflow/dto/job/ArchiveJobRequestDTO.java`
 
 **Depends on:** B1 (enums) — GROUP A
 
@@ -370,6 +373,7 @@ public record JobResponseDTO(
     JobStatus status,
     String dueDate,
     Map<String, Object> briefingData,
+    Boolean archived,
     ClientSummaryDTO client,
     MemberSummaryDTO assignedTo,
     MemberSummaryDTO createdBy,
@@ -440,6 +444,17 @@ public record MemberSummaryDTO(
     String name,
     String email,
     MemberRole role
+) {}
+```
+
+```java
+// ArchiveJobRequestDTO.java
+package com.briefflow.dto.job;
+
+import jakarta.validation.constraints.NotNull;
+
+public record ArchiveJobRequestDTO(
+    @NotNull Boolean archived
 ) {}
 ```
 
@@ -566,6 +581,9 @@ public class Job {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "briefing_data", columnDefinition = "jsonb")
     private Map<String, Object> briefingData = new HashMap<>();
+
+    @Column(nullable = false)
+    private Boolean archived = false;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobFile> files = new ArrayList<>();
@@ -710,7 +728,7 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
         LEFT JOIN FETCH j.client c
         LEFT JOIN FETCH j.assignedTo a LEFT JOIN FETCH a.user
         WHERE j.workspace.id = :workspaceId
-          AND j.status <> com.briefflow.enums.JobStatus.ARCHIVED
+          AND j.archived = :archived
           AND (
                j.assignedTo.id = :memberId
             OR j.client.id IN (
@@ -719,14 +737,15 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
           )
     """)
     List<Job> findVisibleToCreative(@Param("workspaceId") Long workspaceId,
-                                     @Param("memberId") Long memberId);
+                                     @Param("memberId") Long memberId,
+                                     @Param("archived") Boolean archived);
 
     @Query("""
         SELECT j FROM Job j
         LEFT JOIN FETCH j.client
         LEFT JOIN FETCH j.assignedTo a LEFT JOIN FETCH a.user
         WHERE j.workspace.id = :workspaceId
-          AND j.status <> com.briefflow.enums.JobStatus.ARCHIVED
+          AND j.archived = false
     """)
     Page<Job> findAllActiveByWorkspaceId(@Param("workspaceId") Long workspaceId, Pageable pageable);
 
@@ -767,7 +786,7 @@ public final class JobSpecifications {
     }
 
     public static Specification<Job> notArchived() {
-        return (root, q, cb) -> cb.notEqual(root.get("status"), JobStatus.ARCHIVED);
+        return (root, q, cb) -> cb.equal(root.get("archived"), false);
     }
 
     public static Specification<Job> hasStatus(JobStatus status) {
@@ -986,7 +1005,7 @@ public interface JobMapper {
 
     default boolean isOverdue(Job job) {
         if (job.getDueDate() == null) return false;
-        if (job.getStatus() == JobStatus.APROVADO || job.getStatus() == JobStatus.ARCHIVED) return false;
+        if (job.getStatus() == JobStatus.APROVADO || job.getStatus() == JobStatus.PUBLICADO) return false;
         return job.getDueDate().isBefore(LocalDate.now());
     }
 
@@ -1517,12 +1536,12 @@ class JobServiceImplTest {
         Long userId = 1L, workspaceId = 2L;
         Member creative = createMember(10L, userId, workspaceId, MemberRole.CREATIVE);
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(creative));
-        when(jobRepository.findVisibleToCreative(workspaceId, creative.getId())).thenReturn(List.of());
+        when(jobRepository.findVisibleToCreative(workspaceId, creative.getId(), false)).thenReturn(List.of());
         when(jobMapper.toListItemDTOList(anyList())).thenReturn(List.of());
 
         service.listJobs(workspaceId, userId, null, null, null, null, null);
 
-        verify(jobRepository).findVisibleToCreative(workspaceId, creative.getId());
+        verify(jobRepository).findVisibleToCreative(workspaceId, creative.getId(), false);
         verify(jobRepository, never()).findAll(any(org.springframework.data.jpa.domain.Specification.class));
     }
 
@@ -1535,10 +1554,12 @@ class JobServiceImplTest {
 
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(manager));
         when(jobRepository.findByIdAndWorkspaceId(500L, workspaceId)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(Job.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(jobMapper.toResponseDTO(any(Job.class))).thenReturn(mock(JobResponseDTO.class));
 
-        service.archiveJob(workspaceId, userId, 500L);
+        service.archiveJob(workspaceId, userId, 500L, true);
 
-        assertEquals(JobStatus.ARCHIVED, job.getStatus());
+        assertTrue(job.getArchived());
         verify(jobRepository).save(job);
     }
 
@@ -1548,7 +1569,7 @@ class JobServiceImplTest {
         Member creative = createMember(10L, userId, workspaceId, MemberRole.CREATIVE);
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(creative));
 
-        assertThrows(ForbiddenException.class, () -> service.archiveJob(workspaceId, userId, 500L));
+        assertThrows(ForbiddenException.class, () -> service.archiveJob(workspaceId, userId, 500L, true));
     }
 
     // helpers
@@ -1596,7 +1617,7 @@ public interface JobService {
                                    Long clientId, Long assignedToId);
     JobResponseDTO getJob(Long workspaceId, Long userId, Long jobId);
     JobResponseDTO updateJob(Long workspaceId, Long userId, Long jobId, JobRequestDTO request);
-    void archiveJob(Long workspaceId, Long userId, Long jobId);
+    JobResponseDTO archiveJob(Long workspaceId, Long userId, Long jobId, boolean archived);
     JobResponseDTO uploadFile(Long workspaceId, Long userId, Long jobId, MultipartFile file);
     void deleteFile(Long workspaceId, Long userId, Long jobId, Long fileId);
     Resource downloadFile(Long workspaceId, Long userId, Long jobId, Long fileId);
@@ -1711,7 +1732,7 @@ public class JobServiceImpl implements JobService {
         Member caller = requireMember(userId, workspaceId);
         List<Job> jobs;
         if (caller.getRole() == MemberRole.CREATIVE) {
-            jobs = jobRepository.findVisibleToCreative(workspaceId, caller.getId());
+            jobs = jobRepository.findVisibleToCreative(workspaceId, caller.getId(), false);
         } else {
             Specification<Job> spec = Specification.where(inWorkspace(workspaceId))
                     .and(notArchived())
@@ -1769,12 +1790,12 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    public void archiveJob(Long workspaceId, Long userId, Long jobId) {
+    public JobResponseDTO archiveJob(Long workspaceId, Long userId, Long jobId, boolean archived) {
         requireOwnerOrManager(userId, workspaceId);
         Job job = jobRepository.findByIdAndWorkspaceId(jobId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job não encontrado"));
-        job.setStatus(JobStatus.ARCHIVED);
-        jobRepository.save(job);
+        job.setArchived(archived);
+        return jobMapper.toResponseDTO(jobRepository.save(job));
     }
 
     @Override
@@ -1898,6 +1919,7 @@ git commit -m "feat(jobs): JobService with role-based visibility and upload"
 // JobController.java
 package com.briefflow.controller;
 
+import com.briefflow.dto.job.ArchiveJobRequestDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
@@ -1964,13 +1986,13 @@ public class JobController {
         return ResponseEntity.ok(jobService.updateJob(workspaceId, userId, id, request));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> archive(
+    @PatchMapping("/{id}/archive")
+    public ResponseEntity<JobResponseDTO> archive(
             @RequestAttribute("workspaceId") Long workspaceId,
             @RequestAttribute("userId") Long userId,
-            @PathVariable Long id) {
-        jobService.archiveJob(workspaceId, userId, id);
-        return ResponseEntity.noContent().build();
+            @PathVariable Long id,
+            @Valid @RequestBody ArchiveJobRequestDTO request) {
+        return ResponseEntity.ok(jobService.archiveJob(workspaceId, userId, id, request.archived()));
     }
 
     @PostMapping(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -2130,7 +2152,7 @@ class JobRepositoryTest {
         jobRepository.save(assigned);
         jobRepository.save(notAssigned);
 
-        List<Job> visible = jobRepository.findVisibleToCreative(w.getId(), creativeM.getId());
+        List<Job> visible = jobRepository.findVisibleToCreative(w.getId(), creativeM.getId(), false);
         assertEquals(1, visible.size());
         assertEquals("Assigned", visible.get(0).getTitle());
     }
@@ -2152,7 +2174,7 @@ class JobRepositoryTest {
         Job j = newJob(w, c, managerM, owner, 1L, "Via clientMember");
         jobRepository.save(j);
 
-        List<Job> visible = jobRepository.findVisibleToCreative(w.getId(), creativeM.getId());
+        List<Job> visible = jobRepository.findVisibleToCreative(w.getId(), creativeM.getId(), false);
         assertEquals(1, visible.size());
     }
 
@@ -2363,7 +2385,7 @@ class JobControllerTest {
     }
 
     @Test
-    void should_archiveJob_returnsNoContent() throws Exception {
+    void should_archiveJob_returnsOkAndArchivedTrue() throws Exception {
         JobRequestDTO req = new JobRequestDTO(
                 clientId, null, "ToArchive", JobType.POST_FEED, JobPriority.NORMAL, null,
                 Map.of("captionText", "c", "format", "1:1")
@@ -2375,9 +2397,12 @@ class JobControllerTest {
                 .andReturn();
         Long id = objectMapper.readTree(r.getResponse().getContentAsString()).get("id").asLong();
 
-        mockMvc.perform(delete("/api/v1/jobs/" + id)
-                .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(patch("/api/v1/jobs/" + id + "/archive")
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"archived\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.archived").value(true));
     }
 
     @Test
