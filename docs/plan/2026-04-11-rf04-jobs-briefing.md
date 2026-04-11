@@ -37,8 +37,8 @@
 - [x] Task F4: Criar `jobs.routes.ts` com 4 rotas e `roleGuard` em new/edit (depende de F3)
 - [x] Task F5: Registrar rota lazy `jobs` em `app.routes.ts` (depende de F4)
 - [x] Task F6: Adicionar item "Jobs" no `SidebarComponent` (depende de F5)
-- [ ] Task F7: Invocar `frontend-design` para `JobListComponent`
-- [ ] Task F8: Implementar `JobListComponent` (depende de F3, F7)
+- [x] Task F7: Invocar `frontend-design` para `JobListComponent`
+- [x] Task F8: Implementar `JobListComponent` (depende de F3, F7)
 - [ ] Task F9: Invocar `frontend-design` para `BriefingFieldsComponent`
 - [ ] Task F10: Implementar `BriefingFieldsComponent` (depende de F2, F9)
 - [ ] Task F11: Invocar `frontend-design` para `JobFileUploaderComponent`
