@@ -3,10 +3,17 @@
 > Arquivo de auto-melhoria contínua. Cada entrada é uma regra acionável que previne erros repetidos entre sessões.
 > Consultar este arquivo no início de cada sessão de implementação.
 
-## [Plan] — Copiar enums da spec literalmente, não reinterpretar
-- **Erro:** No plano do RF04, `JobStatus` foi escrito como `[NOVO, EM_CRIACAO, REVISAO, AGUARDANDO_APROVACAO, APROVADO, ARCHIVED]`, divergindo da spec (`REVISAO_INTERNA`, `PUBLICADO`). Isso virou bug de implementação na Task B1 e só foi pego no code review
-- **Regra:** Ao transcrever enums, tabelas de status, campos de entity ou qualquer vocabulário canônico da spec para o plano de implementação, copiar **byte-a-byte** da spec. Se precisar simplificar ou renomear, atualizar a spec primeiro. Fazer `grep` da lista de valores contra a spec antes de commitar o plano. Na consolidação do plano via Team Lead, cruzar nomes entre spec e drafts dos teammates
-- **Contexto:** Skill `writing-plans`, especialmente quando a spec define enums, estados de máquina ou listas fechadas de valores
+## [Plan] — Copiar vocabulário da spec literalmente, não reinterpretar (REINCIDENTE 2x)
+- **Erro:** No plano do RF04, duas violações do mesmo princípio: (1) `JobStatus` foi escrito como `REVISAO/ARCHIVED` em vez de `REVISAO_INTERNA/PUBLICADO` (enum). (2) Nomes de campo backend divergiram da spec em 5+ lugares: `job_number` em vez de `sequence_number`, `due_date` em vez de `deadline`, `assigned_to_id` em vez de `assigned_creative_id`, `file_url/file_name` em vez de `stored_filename/original_filename`, e a coluna `description TEXT` foi esquecida. Pior: o frontend do mesmo plano usava os nomes corretos da spec, criando contrato quebrado entre as duas metades
+- **Regra:** Ao transcrever QUALQUER vocabulário canônico da spec para o plano (enums, nomes de coluna, nomes de campo em DTOs/entities, nomes de constraint, nomes de índice, endpoints REST), copiar **byte-a-byte** da spec. Se precisar renomear, atualizar a spec primeiro e commitar a atualização. Na consolidação do plano via Team Lead, executar um grep cruzado: para cada nome de campo que aparece no backend draft, verificar que o mesmo nome aparece no frontend draft E na spec. Se divergir → parar, resolver, depois commitar o plano
+- **Contexto:** Skill `writing-plans` com agent team (backend-architect + frontend-architect), e a fase de consolidação do Team Lead. Vale para TODO vocabulário fechado da spec — não só enums
+
+## [Plan] — Migrations DEVEM ser validadas contra a spec antes de rodar
+- **Erro:** Task B2 (V8 migration) do RF04 foi copiada do plano sem verificação contra a spec. O plano tinha 5+ nomes de coluna errados. O SQL rodou e commitou antes do code review pegar o problema. Migrations são forward-only — erros em nomes de coluna custam uma V+1 de `ALTER TABLE ... RENAME`
+- **Regra:** Antes de executar qualquer task de migration SQL, o executor DEVE fazer um diff manual entre a seção "Migration" do plano e a seção "Migration" da spec. Nomes de coluna, tipos, constraints, defaults, indexes — comparar item a item. Se divergir, parar, reportar ao usuário, e fixar plano OU spec antes de commitar o SQL
+- **Contexto:** Toda task `V*__*.sql` gerada por um plano
+
+## [Angular] — Sempre invocar frontend-design antes de implementar UI (ERRO REINCIDENTE)
 
 ## [Domain] — Soft-delete é coluna booleana dedicada, não valor de enum de status
 - **Erro:** No plano do RF04, `JobStatus.ARCHIVED` foi usado como mecanismo de soft-delete, substituindo a coluna `archived BOOLEAN` que a spec definia. Isso criava duas fontes da verdade e ambiguidade: um job `APROVADO` + `archived=true` ficava inconsistente
