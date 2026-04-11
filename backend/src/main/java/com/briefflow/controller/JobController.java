@@ -1,6 +1,7 @@
 package com.briefflow.controller;
 
 import com.briefflow.dto.job.ArchiveJobRequestDTO;
+import com.briefflow.dto.job.JobFileDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
@@ -80,7 +81,7 @@ public class JobController {
     }
 
     @PostMapping(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<JobResponseDTO> uploadFile(
+    public ResponseEntity<JobFileDTO> uploadFile(
             @RequestAttribute("workspaceId") Long workspaceId,
             @RequestAttribute("userId") Long userId,
             @PathVariable Long id,

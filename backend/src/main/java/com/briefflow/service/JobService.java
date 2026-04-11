@@ -1,5 +1,6 @@
 package com.briefflow.service;
 
+import com.briefflow.dto.job.JobFileDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
@@ -25,7 +26,7 @@ public interface JobService {
 
     JobResponseDTO archiveJob(Long workspaceId, Long userId, Long jobId, boolean archived);
 
-    JobResponseDTO uploadFile(Long workspaceId, Long userId, Long jobId, MultipartFile file);
+    JobFileDTO uploadFile(Long workspaceId, Long userId, Long jobId, MultipartFile file);
 
     void deleteFile(Long workspaceId, Long userId, Long jobId, Long fileId);
 

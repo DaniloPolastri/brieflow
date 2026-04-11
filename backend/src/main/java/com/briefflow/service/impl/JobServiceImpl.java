@@ -1,5 +1,6 @@
 package com.briefflow.service.impl;
 
+import com.briefflow.dto.job.JobFileDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
@@ -236,7 +237,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    public JobResponseDTO uploadFile(Long workspaceId, Long userId, Long jobId, MultipartFile file) {
+    public JobFileDTO uploadFile(Long workspaceId, Long userId, Long jobId, MultipartFile file) {
         requireOwnerOrManager(userId, workspaceId);
         Job job = jobRepository.findByIdAndWorkspaceId(jobId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job não encontrado"));
@@ -269,9 +270,9 @@ public class JobServiceImpl implements JobService {
         jf.setSizeBytes(file.getSize());
         jf.setUploadedBy(uploader);
         job.getFiles().add(jf);
-        jobFileRepository.save(jf);
+        JobFile saved = jobFileRepository.save(jf);
 
-        return jobMapper.toResponseDTO(job);
+        return jobMapper.toFileDTO(saved);
     }
 
     @Override
