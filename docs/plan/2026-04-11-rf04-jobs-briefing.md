@@ -20,7 +20,7 @@
 - [x] Task B2: Migration V8 (jobs, job_files, workspaces.job_counter) ⚡ PARALLEL GROUP A
 - [x] Task B3: DTOs (JobRequestDTO, JobResponseDTO, JobListItemDTO, JobFileDTO, ClientSummaryDTO, MemberSummaryDTO) ⚡ PARALLEL GROUP A
 - [x] Task B4: Workspace entity — adicionar campo `jobCounter` (depende de B2)
-- [ ] Task B5: Entities Job + JobFile (depende de B1, B2, B4)
+- [x] Task B5: Entities Job + JobFile (depende de B1, B2, B4)
 - [ ] Task B6: JobRepository + JobFileRepository + JobSpecifications (depende de B5)
 - [ ] Task B7: JobMapper (MapStruct) + helpers (depende de B5, B3) ⚡ PARALLEL GROUP B
 - [ ] Task B8: BriefingValidator (Strategy Pattern) + 7 TypeBriefingValidator impls (depende de B1) ⚡ PARALLEL GROUP B
