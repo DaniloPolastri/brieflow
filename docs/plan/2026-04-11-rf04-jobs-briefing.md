@@ -41,8 +41,8 @@
 - [x] Task F8: Implementar `JobListComponent` (depende de F3, F7)
 - [x] Task F9: Invocar `frontend-design` para `BriefingFieldsComponent`
 - [x] Task F10: Implementar `BriefingFieldsComponent` (depende de F2, F9)
-- [ ] Task F11: Invocar `frontend-design` para `JobFileUploaderComponent`
-- [ ] Task F12: Implementar `JobFileUploaderComponent` (depende de F3, F11)
+- [x] Task F11: Invocar `frontend-design` para `JobFileUploaderComponent`
+- [x] Task F12: Implementar `JobFileUploaderComponent` (depende de F3, F11)
 - [ ] Task F13: Invocar `frontend-design` para `JobSummarySidebarComponent`
 - [ ] Task F14: Implementar `JobSummarySidebarComponent` (depende de F1, F13)
 - [ ] Task F15: Invocar `frontend-design` para `JobFormComponent`
