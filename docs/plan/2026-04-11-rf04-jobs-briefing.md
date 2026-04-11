@@ -45,8 +45,8 @@
 - [x] Task F12: Implementar `JobFileUploaderComponent` (depende de F3, F11)
 - [x] Task F13: Invocar `frontend-design` para `JobSummarySidebarComponent`
 - [x] Task F14: Implementar `JobSummarySidebarComponent` (depende de F1, F13)
-- [ ] Task F15: Invocar `frontend-design` para `JobFormComponent`
-- [ ] Task F16: Implementar `JobFormComponent` (depende de F3, F10, F12, F14, F15)
+- [x] Task F15: Invocar `frontend-design` para `JobFormComponent`
+- [x] Task F16: Implementar `JobFormComponent` (depende de F3, F10, F12, F14, F15)
 - [ ] Task F17: Invocar `frontend-design` para `JobCreateComponent`
 - [ ] Task F18: Implementar `JobCreateComponent` (depende de F16, F17)
 - [ ] Task F19: Invocar `frontend-design` para `JobEditComponent`
