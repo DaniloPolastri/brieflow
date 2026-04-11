@@ -53,7 +53,7 @@
 - [x] Task F20: Implementar `JobEditComponent` (depende de F16, F19)
 - [x] Task F21: Invocar `frontend-design` para `JobDetailComponent`
 - [x] Task F22: Implementar `JobDetailComponent` (depende de F3, F10, F21)
-- [ ] Task F23: Smoke test manual + ajustes finais (backend + frontend locais)
+- [x] Task F23: Smoke test manual + ajustes finais (backend + frontend locais)
 
 ---
 
