@@ -45,10 +45,10 @@ public final class JobSpecifications {
         return (root, q, cb) -> {
             if (search == null || search.isBlank()) return cb.conjunction();
             String pattern = "%" + search.toLowerCase() + "%";
-            return cb.or(
-                cb.like(cb.lower(root.get("title")), pattern),
-                cb.like(cb.function("cast", String.class, root.get("sequenceNumber")), pattern)
-            );
+            // Only search by title — sequence_number search requires a cast that is
+            // fragile across databases. If the user searches for "JOB-001", stripping
+            // the prefix and matching numerically would need a custom query.
+            return cb.like(cb.lower(root.get("title")), pattern);
         };
     }
 }
