@@ -268,33 +268,34 @@ CREATE TABLE jobs (
     id BIGSERIAL PRIMARY KEY,
     workspace_id BIGINT NOT NULL REFERENCES workspaces(id),
     client_id BIGINT NOT NULL REFERENCES clients(id),
-    assigned_to_id BIGINT REFERENCES members(id),
+    assigned_creative_id BIGINT REFERENCES members(id),
     created_by_id BIGINT NOT NULL REFERENCES users(id),
-    job_number BIGINT NOT NULL,
+    sequence_number INTEGER NOT NULL,
     title VARCHAR(255) NOT NULL,
     type VARCHAR(32) NOT NULL,
     priority VARCHAR(16) NOT NULL DEFAULT 'NORMAL',
     status VARCHAR(32) NOT NULL DEFAULT 'NOVO',
-    due_date DATE,
-    briefing_data JSONB,
+    description TEXT,
+    deadline DATE,
+    briefing_data JSONB NOT NULL DEFAULT '{}'::jsonb,
     archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    CONSTRAINT uk_jobs_workspace_number UNIQUE (workspace_id, job_number)
+    CONSTRAINT uk_jobs_workspace_sequence UNIQUE (workspace_id, sequence_number)
 );
 
 CREATE INDEX idx_jobs_workspace_id ON jobs(workspace_id);
 CREATE INDEX idx_jobs_workspace_archived ON jobs(workspace_id, archived);
 CREATE INDEX idx_jobs_client_id ON jobs(client_id);
-CREATE INDEX idx_jobs_assigned_to ON jobs(assigned_to_id);
+CREATE INDEX idx_jobs_assigned_creative_id ON jobs(assigned_creative_id);
 CREATE INDEX idx_jobs_status ON jobs(workspace_id, status);
-CREATE INDEX idx_jobs_due_date ON jobs(workspace_id, due_date);
+CREATE INDEX idx_jobs_deadline ON jobs(workspace_id, deadline);
 
 CREATE TABLE job_files (
     id BIGSERIAL PRIMARY KEY,
     job_id BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    file_url VARCHAR(500) NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(500) NOT NULL,
+    stored_filename VARCHAR(500) NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
     size_bytes BIGINT NOT NULL,
     uploaded_by_id BIGINT NOT NULL REFERENCES users(id),
@@ -345,11 +346,12 @@ import java.util.Map;
 
 public record JobRequestDTO(
     @NotNull Long clientId,
-    Long assignedToId,
+    Long assignedCreativeId,
     @NotBlank @Size(max = 255) String title,
     @NotNull JobType type,
     @NotNull JobPriority priority,
-    LocalDate dueDate,
+    String description,
+    LocalDate deadline,
     @NotNull Map<String, Object> briefingData
 ) {}
 ```
@@ -366,16 +368,17 @@ import java.util.Map;
 
 public record JobResponseDTO(
     Long id,
-    Long jobNumber,
+    String code,                       // "JOB-001"
     String title,
     JobType type,
     JobPriority priority,
     JobStatus status,
-    String dueDate,
+    String description,
+    String deadline,
     Map<String, Object> briefingData,
     Boolean archived,
     ClientSummaryDTO client,
-    MemberSummaryDTO assignedTo,
+    MemberSummaryDTO assignedCreative,
     MemberSummaryDTO createdBy,
     List<JobFileDTO> files,
     String createdAt,
@@ -394,14 +397,14 @@ import com.briefflow.enums.JobType;
 
 public record JobListItemDTO(
     Long id,
-    Long jobNumber,
+    String code,                       // "JOB-001"
     String title,
     JobType type,
     JobPriority priority,
     JobStatus status,
-    String dueDate,
+    String deadline,
     ClientSummaryDTO client,
-    MemberSummaryDTO assignedTo,
+    MemberSummaryDTO assignedCreative,
     boolean overdue
 ) {}
 ```
@@ -412,11 +415,11 @@ package com.briefflow.dto.job;
 
 public record JobFileDTO(
     Long id,
-    String fileUrl,
-    String fileName,
+    String originalFilename,
     String mimeType,
     Long sizeBytes,
-    String uploadedAt
+    String uploadedAt,
+    String downloadUrl
 ) {}
 ```
 
@@ -530,7 +533,7 @@ import java.util.Map;
 
 @Entity
 @Table(name = "jobs", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_jobs_workspace_number", columnNames = {"workspace_id", "job_number"})
+    @UniqueConstraint(name = "uk_jobs_workspace_sequence", columnNames = {"workspace_id", "sequence_number"})
 })
 @Getter
 @Setter
@@ -550,15 +553,15 @@ public class Job {
     private Client client;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to_id")
-    private Member assignedTo;
+    @JoinColumn(name = "assigned_creative_id")
+    private Member assignedCreative;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;
 
-    @Column(name = "job_number", nullable = false)
-    private Long jobNumber;
+    @Column(name = "sequence_number", nullable = false)
+    private Integer sequenceNumber;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -575,11 +578,13 @@ public class Job {
     @Column(nullable = false, length = 32)
     private JobStatus status = JobStatus.NOVO;
 
-    @Column(name = "due_date")
-    private LocalDate dueDate;
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private LocalDate deadline;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "briefing_data", columnDefinition = "jsonb")
+    @Column(name = "briefing_data", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> briefingData = new HashMap<>();
 
     @Column(nullable = false)
@@ -603,6 +608,10 @@ public class Job {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public String getCode() {
+        return String.format("JOB-%03d", sequenceNumber);
     }
 }
 ```
@@ -633,11 +642,11 @@ public class JobFile {
     @JoinColumn(name = "job_id", nullable = false)
     private Job job;
 
-    @Column(name = "file_url", nullable = false, length = 500)
-    private String fileUrl;
+    @Column(name = "original_filename", nullable = false, length = 500)
+    private String originalFilename;
 
-    @Column(name = "file_name", nullable = false, length = 255)
-    private String fileName;
+    @Column(name = "stored_filename", nullable = false, length = 500)
+    private String storedFilename;
 
     @Column(name = "mime_type", nullable = false, length = 100)
     private String mimeType;
@@ -705,7 +714,7 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("""
         SELECT j FROM Job j
         LEFT JOIN FETCH j.client
-        LEFT JOIN FETCH j.assignedTo a LEFT JOIN FETCH a.user
+        LEFT JOIN FETCH j.assignedCreative a LEFT JOIN FETCH a.user
         LEFT JOIN FETCH j.createdBy
         LEFT JOIN FETCH j.files
         WHERE j.id = :id AND j.workspace.id = :workspaceId
@@ -726,11 +735,11 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("""
         SELECT DISTINCT j FROM Job j
         LEFT JOIN FETCH j.client c
-        LEFT JOIN FETCH j.assignedTo a LEFT JOIN FETCH a.user
+        LEFT JOIN FETCH j.assignedCreative a LEFT JOIN FETCH a.user
         WHERE j.workspace.id = :workspaceId
           AND j.archived = :archived
           AND (
-               j.assignedTo.id = :memberId
+               j.assignedCreative.id = :memberId
             OR j.client.id IN (
                  SELECT cm.clientId FROM ClientMember cm WHERE cm.memberId = :memberId
                )
@@ -743,7 +752,7 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("""
         SELECT j FROM Job j
         LEFT JOIN FETCH j.client
-        LEFT JOIN FETCH j.assignedTo a LEFT JOIN FETCH a.user
+        LEFT JOIN FETCH j.assignedCreative a LEFT JOIN FETCH a.user
         WHERE j.workspace.id = :workspaceId
           AND j.archived = false
     """)
@@ -805,8 +814,8 @@ public final class JobSpecifications {
         return (root, q, cb) -> clientId == null ? cb.conjunction() : cb.equal(root.get("client").get("id"), clientId);
     }
 
-    public static Specification<Job> assignedTo(Long memberId) {
-        return (root, q, cb) -> memberId == null ? cb.conjunction() : cb.equal(root.get("assignedTo").get("id"), memberId);
+    public static Specification<Job> assignedCreative(Long memberId) {
+        return (root, q, cb) -> memberId == null ? cb.conjunction() : cb.equal(root.get("assignedCreative").get("id"), memberId);
     }
 }
 ```
@@ -857,7 +866,7 @@ class JobMapperTest {
     private final JobMapper mapper = Mappers.getMapper(JobMapper.class);
 
     @Test
-    void should_mapJobToResponseDTO_withClientAndAssignedToAndFiles() {
+    void should_mapJobToResponseDTO_withClientAndAssignedCreativeAndFiles() {
         Workspace w = new Workspace(); w.setId(1L); w.setName("WS");
         Client c = new Client(); c.setId(10L); c.setName("Client A"); c.setCompany("Co A");
         User u = new User(); u.setId(20L); u.setName("Alice"); u.setEmail("a@b.com");
@@ -867,14 +876,15 @@ class JobMapperTest {
         j.setId(100L);
         j.setWorkspace(w);
         j.setClient(c);
-        j.setAssignedTo(m);
+        j.setAssignedCreative(m);
         j.setCreatedBy(u);
-        j.setJobNumber(1L);
+        j.setSequenceNumber(1);
         j.setTitle("Post X");
         j.setType(JobType.POST_FEED);
         j.setPriority(JobPriority.NORMAL);
         j.setStatus(JobStatus.NOVO);
-        j.setDueDate(LocalDate.now().plusDays(3));
+        j.setDescription("Briefing para post de lançamento");
+        j.setDeadline(LocalDate.now().plusDays(3));
         Map<String, Object> bd = new HashMap<>();
         bd.put("captionText", "hello");
         j.setBriefingData(bd);
@@ -884,50 +894,52 @@ class JobMapperTest {
         JobResponseDTO dto = mapper.toResponseDTO(j);
 
         assertEquals(100L, dto.id());
-        assertEquals(1L, dto.jobNumber());
+        assertEquals("JOB-001", dto.code());
         assertEquals("Post X", dto.title());
         assertEquals(JobType.POST_FEED, dto.type());
+        assertEquals("Briefing para post de lançamento", dto.description());
         assertEquals(10L, dto.client().id());
         assertEquals("Client A", dto.client().name());
-        assertEquals(30L, dto.assignedTo().id());
-        assertEquals("Alice", dto.assignedTo().name());
+        assertEquals(30L, dto.assignedCreative().id());
+        assertEquals("Alice", dto.assignedCreative().name());
         assertEquals("hello", dto.briefingData().get("captionText"));
         assertNotNull(dto.createdAt());
         assertFalse(dto.overdue());
     }
 
     @Test
-    void should_markOverdue_when_dueDateInPastAndStatusNotApproved() {
-        Job j = jobWithDueDate(LocalDate.now().minusDays(1), JobStatus.EM_CRIACAO);
+    void should_markOverdue_when_deadlineInPastAndStatusNotApproved() {
+        Job j = jobWithDeadline(LocalDate.now().minusDays(1), JobStatus.EM_CRIACAO);
         JobResponseDTO dto = mapper.toResponseDTO(j);
         assertTrue(dto.overdue());
     }
 
     @Test
     void should_notMarkOverdue_when_statusIsAprovado() {
-        Job j = jobWithDueDate(LocalDate.now().minusDays(5), JobStatus.APROVADO);
+        Job j = jobWithDeadline(LocalDate.now().minusDays(5), JobStatus.APROVADO);
         JobResponseDTO dto = mapper.toResponseDTO(j);
         assertFalse(dto.overdue());
     }
 
     @Test
     void should_mapJobToListItemDTO() {
-        Job j = jobWithDueDate(LocalDate.now().plusDays(1), JobStatus.NOVO);
+        Job j = jobWithDeadline(LocalDate.now().plusDays(1), JobStatus.NOVO);
         JobListItemDTO item = mapper.toListItemDTO(j);
         assertEquals(j.getId(), item.id());
+        assertEquals("JOB-001", item.code());
         assertEquals(j.getTitle(), item.title());
         assertNotNull(item.client());
     }
 
-    private Job jobWithDueDate(LocalDate due, JobStatus status) {
+    private Job jobWithDeadline(LocalDate deadline, JobStatus status) {
         Workspace w = new Workspace(); w.setId(1L);
         Client c = new Client(); c.setId(10L); c.setName("C");
         User u = new User(); u.setId(20L); u.setName("U"); u.setEmail("u@u.com");
         Member m = new Member(); m.setId(30L); m.setUser(u); m.setRole(MemberRole.CREATIVE);
         Job j = new Job();
-        j.setId(100L); j.setWorkspace(w); j.setClient(c); j.setAssignedTo(m); j.setCreatedBy(u);
-        j.setJobNumber(1L); j.setTitle("T"); j.setType(JobType.POST_FEED);
-        j.setPriority(JobPriority.NORMAL); j.setStatus(status); j.setDueDate(due);
+        j.setId(100L); j.setWorkspace(w); j.setClient(c); j.setAssignedCreative(m); j.setCreatedBy(u);
+        j.setSequenceNumber(1); j.setTitle("T"); j.setType(JobType.POST_FEED);
+        j.setPriority(JobPriority.NORMAL); j.setStatus(status); j.setDeadline(deadline);
         j.setCreatedAt(LocalDateTime.now()); j.setUpdatedAt(LocalDateTime.now());
         return j;
     }
@@ -959,24 +971,28 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface JobMapper {
 
+    @Mapping(target = "code", expression = "java(job.getCode())")
     @Mapping(target = "client", source = "client")
-    @Mapping(target = "assignedTo", source = "assignedTo")
+    @Mapping(target = "assignedCreative", source = "assignedCreative")
     @Mapping(target = "createdBy", expression = "java(mapUserAsMember(job))")
-    @Mapping(target = "dueDate", source = "dueDate", qualifiedByName = "formatDate")
+    @Mapping(target = "deadline", source = "deadline", qualifiedByName = "formatDate")
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "formatDateTime")
     @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "formatDateTime")
     @Mapping(target = "overdue", expression = "java(isOverdue(job))")
     JobResponseDTO toResponseDTO(Job job);
 
+    @Mapping(target = "code", expression = "java(job.getCode())")
     @Mapping(target = "client", source = "client")
-    @Mapping(target = "assignedTo", source = "assignedTo")
-    @Mapping(target = "dueDate", source = "dueDate", qualifiedByName = "formatDate")
+    @Mapping(target = "assignedCreative", source = "assignedCreative")
+    @Mapping(target = "deadline", source = "deadline", qualifiedByName = "formatDate")
     @Mapping(target = "overdue", expression = "java(isOverdue(job))")
     JobListItemDTO toListItemDTO(Job job);
 
     List<JobListItemDTO> toListItemDTOList(List<Job> jobs);
 
+    @Mapping(target = "originalFilename", source = "originalFilename")
     @Mapping(target = "uploadedAt", source = "uploadedAt", qualifiedByName = "formatDateTime")
+    @Mapping(target = "downloadUrl", expression = "java(buildDownloadUrl(file))")
     JobFileDTO toFileDTO(JobFile file);
 
     @Mapping(target = "id", source = "id")
@@ -1004,9 +1020,14 @@ public interface JobMapper {
     }
 
     default boolean isOverdue(Job job) {
-        if (job.getDueDate() == null) return false;
+        if (job.getDeadline() == null) return false;
         if (job.getStatus() == JobStatus.APROVADO || job.getStatus() == JobStatus.PUBLICADO) return false;
-        return job.getDueDate().isBefore(LocalDate.now());
+        return job.getDeadline().isBefore(LocalDate.now());
+    }
+
+    default String buildDownloadUrl(JobFile file) {
+        if (file == null || file.getJob() == null) return null;
+        return "/api/v1/jobs/" + file.getJob().getId() + "/files/" + file.getId() + "/download";
     }
 
     @Named("formatDate")
@@ -1482,7 +1503,7 @@ class JobServiceImplTest {
         });
         when(jobMapper.toResponseDTO(any(Job.class))).thenReturn(mock(JobResponseDTO.class));
 
-        JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null,
+        JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1"));
         JobResponseDTO dto = service.createJob(workspaceId, userId, req);
 
@@ -1497,7 +1518,7 @@ class JobServiceImplTest {
         Member creative = createMember(10L, userId, workspaceId, MemberRole.CREATIVE);
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(creative));
 
-        JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null,
+        JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1"));
 
         assertThrows(ForbiddenException.class, () -> service.createJob(workspaceId, userId, req));
@@ -1511,7 +1532,7 @@ class JobServiceImplTest {
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(manager));
         when(clientRepository.findByIdAndWorkspaceId(999L, workspaceId)).thenReturn(Optional.empty());
 
-        JobRequestDTO req = new JobRequestDTO(999L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null,
+        JobRequestDTO req = new JobRequestDTO(999L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1"));
 
         assertThrows(ResourceNotFoundException.class, () -> service.createJob(workspaceId, userId, req));
@@ -1614,7 +1635,7 @@ public interface JobService {
     JobResponseDTO createJob(Long workspaceId, Long userId, JobRequestDTO request);
     List<JobListItemDTO> listJobs(Long workspaceId, Long userId,
                                    JobStatus status, JobType type, JobPriority priority,
-                                   Long clientId, Long assignedToId);
+                                   Long clientId, Long assignedCreativeId);
     JobResponseDTO getJob(Long workspaceId, Long userId, Long jobId);
     JobResponseDTO updateJob(Long workspaceId, Long userId, Long jobId, JobRequestDTO request);
     JobResponseDTO archiveJob(Long workspaceId, Long userId, Long jobId, boolean archived);
@@ -1696,28 +1717,29 @@ public class JobServiceImpl implements JobService {
         Client client = clientRepository.findByIdAndWorkspaceId(req.clientId(), workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado"));
 
-        Member assignedTo = null;
-        if (req.assignedToId() != null) {
-            assignedTo = memberRepository.findByIdAndWorkspaceId(req.assignedToId(), workspaceId)
+        Member assignedCreative = null;
+        if (req.assignedCreativeId() != null) {
+            assignedCreative = memberRepository.findByIdAndWorkspaceId(req.assignedCreativeId(), workspaceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Membro designado não encontrado"));
         }
 
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
-        Long jobNumber = jobRepository.incrementAndGetJobCounter(workspaceId);
+        Long sequenceNumber = jobRepository.incrementAndGetJobCounter(workspaceId);
 
         Job job = new Job();
         job.setWorkspace(caller.getWorkspace());
         job.setClient(client);
-        job.setAssignedTo(assignedTo);
+        job.setAssignedCreative(assignedCreative);
         job.setCreatedBy(creator);
-        job.setJobNumber(jobNumber);
+        job.setSequenceNumber(sequenceNumber.intValue());
         job.setTitle(req.title());
         job.setType(req.type());
         job.setPriority(req.priority());
         job.setStatus(JobStatus.NOVO);
-        job.setDueDate(req.dueDate());
+        job.setDescription(req.description());
+        job.setDeadline(req.deadline());
         job.setBriefingData(req.briefingData());
 
         Job saved = jobRepository.save(job);
@@ -1728,7 +1750,7 @@ public class JobServiceImpl implements JobService {
     @Transactional(readOnly = true)
     public List<JobListItemDTO> listJobs(Long workspaceId, Long userId,
                                           JobStatus status, JobType type, JobPriority priority,
-                                          Long clientId, Long assignedToId) {
+                                          Long clientId, Long assignedCreativeId) {
         Member caller = requireMember(userId, workspaceId);
         List<Job> jobs;
         if (caller.getRole() == MemberRole.CREATIVE) {
@@ -1740,7 +1762,7 @@ public class JobServiceImpl implements JobService {
                     .and(hasType(type))
                     .and(hasPriority(priority))
                     .and(forClient(clientId))
-                    .and(assignedTo(assignedToId));
+                    .and(assignedCreative(assignedCreativeId));
             jobs = jobRepository.findAll(spec);
         }
         return jobMapper.toListItemDTOList(jobs);
@@ -1771,18 +1793,19 @@ public class JobServiceImpl implements JobService {
             job.setClient(client);
         }
 
-        if (req.assignedToId() == null) {
-            job.setAssignedTo(null);
-        } else if (job.getAssignedTo() == null || !job.getAssignedTo().getId().equals(req.assignedToId())) {
-            Member m = memberRepository.findByIdAndWorkspaceId(req.assignedToId(), workspaceId)
+        if (req.assignedCreativeId() == null) {
+            job.setAssignedCreative(null);
+        } else if (job.getAssignedCreative() == null || !job.getAssignedCreative().getId().equals(req.assignedCreativeId())) {
+            Member m = memberRepository.findByIdAndWorkspaceId(req.assignedCreativeId(), workspaceId)
                     .orElseThrow(() -> new ResourceNotFoundException("Membro não encontrado"));
-            job.setAssignedTo(m);
+            job.setAssignedCreative(m);
         }
 
         job.setTitle(req.title());
         job.setType(req.type());
         job.setPriority(req.priority());
-        job.setDueDate(req.dueDate());
+        job.setDescription(req.description());
+        job.setDeadline(req.deadline());
         job.setBriefingData(req.briefingData());
 
         return jobMapper.toResponseDTO(jobRepository.save(job));
@@ -1814,10 +1837,9 @@ public class JobServiceImpl implements JobService {
 
         String original = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
         String ext = original.contains(".") ? original.substring(original.lastIndexOf('.')) : "";
-        String filename = UUID.randomUUID() + ext;
-        String url;
+        String stored = UUID.randomUUID() + ext;
         try {
-            url = fileStorageService.store(file, "jobs/" + jobId, filename);
+            fileStorageService.store(file, "jobs/" + jobId, stored);
         } catch (IOException e) {
             throw new FileStorageException("Falha ao salvar arquivo", e);
         }
@@ -1827,8 +1849,8 @@ public class JobServiceImpl implements JobService {
 
         JobFile jf = new JobFile();
         jf.setJob(job);
-        jf.setFileUrl(url);
-        jf.setFileName(original);
+        jf.setOriginalFilename(original);
+        jf.setStoredFilename(stored);
         jf.setMimeType(mime);
         jf.setSizeBytes(file.getSize());
         jf.setUploadedBy(uploader);
@@ -1847,7 +1869,7 @@ public class JobServiceImpl implements JobService {
         JobFile file = jobFileRepository.findByIdAndJobId(fileId, job.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Arquivo não encontrado"));
         try {
-            fileStorageService.delete(file.getFileUrl());
+            fileStorageService.delete("jobs/" + job.getId() + "/" + file.getStoredFilename());
         } catch (IOException e) {
             throw new FileStorageException("Falha ao excluir arquivo", e);
         }
@@ -1864,7 +1886,7 @@ public class JobServiceImpl implements JobService {
         JobFile file = jobFileRepository.findByIdAndJobId(fileId, job.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Arquivo não encontrado"));
         try {
-            return fileStorageService.load(file.getFileUrl());
+            return fileStorageService.load("jobs/" + job.getId() + "/" + file.getStoredFilename());
         } catch (IOException e) {
             throw new FileStorageException("Falha ao ler arquivo", e);
         }
@@ -1885,7 +1907,7 @@ public class JobServiceImpl implements JobService {
 
     private void assertCanView(Member caller, Job job) {
         if (caller.getRole() != MemberRole.CREATIVE) return;
-        boolean assigned = job.getAssignedTo() != null && job.getAssignedTo().getId().equals(caller.getId());
+        boolean assigned = job.getAssignedCreative() != null && job.getAssignedCreative().getId().equals(caller.getId());
         boolean clientMember = clientMemberRepository.existsByClientIdAndMemberId(job.getClient().getId(), caller.getId());
         if (!assigned && !clientMember) throw new ForbiddenException("Sem acesso ao job");
     }
@@ -1965,8 +1987,8 @@ public class JobController {
             @RequestParam(required = false) JobType type,
             @RequestParam(required = false) JobPriority priority,
             @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) Long assignedToId) {
-        return ResponseEntity.ok(jobService.listJobs(workspaceId, userId, status, type, priority, clientId, assignedToId));
+            @RequestParam(required = false) Long assignedCreativeId) {
+        return ResponseEntity.ok(jobService.listJobs(workspaceId, userId, status, type, priority, clientId, assignedCreativeId));
     }
 
     @GetMapping("/{id}")
@@ -2110,16 +2132,16 @@ class JobRepositoryTest {
     }
 
     @Test
-    void should_enforceUniqueJobNumberPerWorkspace() {
+    void should_enforceUniqueSequenceNumberPerWorkspace() {
         Workspace w = newWorkspace("WS2");
         User u = newUser("u@t.com");
         Member m = newMember(w, u, MemberRole.MANAGER);
         Client c = newClient(w);
 
-        Job j1 = newJob(w, c, m, u, 1L, "J1");
+        Job j1 = newJob(w, c, m, u, 1, "J1");
         jobRepository.save(j1);
 
-        Job j2 = newJob(w, c, m, u, 1L, "J2");
+        Job j2 = newJob(w, c, m, u, 1, "J2");
         assertThrows(Exception.class, () -> jobRepository.saveAndFlush(j2));
     }
 
@@ -2129,13 +2151,13 @@ class JobRepositoryTest {
         User u = newUser("u3@t.com");
         Member m = newMember(w, u, MemberRole.MANAGER);
         Client c = newClient(w);
-        Job j = newJob(w, c, m, u, 1L, "With details");
+        Job j = newJob(w, c, m, u, 1, "With details");
         jobRepository.save(j);
 
         Optional<Job> found = jobRepository.findByIdAndWorkspaceIdWithDetails(j.getId(), w.getId());
         assertTrue(found.isPresent());
         assertNotNull(found.get().getClient().getName());
-        assertNotNull(found.get().getAssignedTo().getUser().getName());
+        assertNotNull(found.get().getAssignedCreative().getUser().getName());
     }
 
     @Test
@@ -2147,8 +2169,8 @@ class JobRepositoryTest {
         Member creativeM = newMember(w, creative, MemberRole.CREATIVE);
         Client c = newClient(w);
 
-        Job assigned = newJob(w, c, creativeM, owner, 1L, "Assigned");
-        Job notAssigned = newJob(w, c, managerM, owner, 2L, "Other");
+        Job assigned = newJob(w, c, creativeM, owner, 1, "Assigned");
+        Job notAssigned = newJob(w, c, managerM, owner, 2, "Other");
         jobRepository.save(assigned);
         jobRepository.save(notAssigned);
 
@@ -2171,7 +2193,7 @@ class JobRepositoryTest {
         cm.setMemberId(creativeM.getId());
         clientMemberRepository.save(cm);
 
-        Job j = newJob(w, c, managerM, owner, 1L, "Via clientMember");
+        Job j = newJob(w, c, managerM, owner, 1, "Via clientMember");
         jobRepository.save(j);
 
         List<Job> visible = jobRepository.findVisibleToCreative(w.getId(), creativeM.getId(), false);
@@ -2201,12 +2223,12 @@ class JobRepositoryTest {
         c.setName("Client"); c.setWorkspace(w); c.setActive(true);
         return clientRepository.save(c);
     }
-    private Job newJob(Workspace w, Client c, Member assignedTo, User creator, Long num, String title) {
+    private Job newJob(Workspace w, Client c, Member assignedCreative, User creator, Integer seq, String title) {
         Job j = new Job();
-        j.setWorkspace(w); j.setClient(c); j.setAssignedTo(assignedTo); j.setCreatedBy(creator);
-        j.setJobNumber(num); j.setTitle(title);
+        j.setWorkspace(w); j.setClient(c); j.setAssignedCreative(assignedCreative); j.setCreatedBy(creator);
+        j.setSequenceNumber(seq); j.setTitle(title);
         j.setType(JobType.POST_FEED); j.setPriority(JobPriority.NORMAL); j.setStatus(JobStatus.NOVO);
-        j.setDueDate(LocalDate.now().plusDays(7));
+        j.setDeadline(LocalDate.now().plusDays(7));
         j.setBriefingData(new HashMap<>());
         return j;
     }
@@ -2319,6 +2341,7 @@ class JobControllerTest {
         JobRequestDTO req = new JobRequestDTO(
                 clientId, null, "Post Black Friday",
                 JobType.POST_FEED, JobPriority.NORMAL,
+                null,
                 LocalDate.now().plusDays(5),
                 Map.of("captionText", "BF!", "format", "1:1")
         );
@@ -2328,7 +2351,7 @@ class JobControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.jobNumber").value(1))
+                .andExpect(jsonPath("$.code").value("JOB-001"))
                 .andExpect(jsonPath("$.title").value("Post Black Friday"))
                 .andExpect(jsonPath("$.type").value("POST_FEED"))
                 .andExpect(jsonPath("$.status").value("NOVO"));
@@ -2337,7 +2360,7 @@ class JobControllerTest {
     @Test
     void should_returnUnprocessable_when_briefingInvalid() throws Exception {
         JobRequestDTO req = new JobRequestDTO(
-                clientId, null, "Bad", JobType.POST_FEED, JobPriority.NORMAL, null,
+                clientId, null, "Bad", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("format", "1:1") // missing captionText
         );
         mockMvc.perform(post("/api/v1/jobs")
@@ -2350,7 +2373,7 @@ class JobControllerTest {
     @Test
     void should_listJobs_filteringByStatus() throws Exception {
         JobRequestDTO req = new JobRequestDTO(
-                clientId, null, "J", JobType.POST_FEED, JobPriority.NORMAL, null,
+                clientId, null, "J", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1")
         );
         mockMvc.perform(post("/api/v1/jobs")
@@ -2368,7 +2391,7 @@ class JobControllerTest {
     @Test
     void should_getJob_returnsDetails() throws Exception {
         JobRequestDTO req = new JobRequestDTO(
-                clientId, null, "Detail", JobType.POST_FEED, JobPriority.NORMAL, null,
+                clientId, null, "Detail", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1")
         );
         MvcResult r = mockMvc.perform(post("/api/v1/jobs")
@@ -2387,7 +2410,7 @@ class JobControllerTest {
     @Test
     void should_archiveJob_returnsOkAndArchivedTrue() throws Exception {
         JobRequestDTO req = new JobRequestDTO(
-                clientId, null, "ToArchive", JobType.POST_FEED, JobPriority.NORMAL, null,
+                clientId, null, "ToArchive", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1")
         );
         MvcResult r = mockMvc.perform(post("/api/v1/jobs")
