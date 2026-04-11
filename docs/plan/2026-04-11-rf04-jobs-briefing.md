@@ -16,7 +16,7 @@
 
 ### Backend (B1–B12)
 
-- [ ] Task B1: Enums (JobType, JobPriority, JobStatus) ⚡ PARALLEL GROUP A
+- [x] Task B1: Enums (JobType, JobPriority, JobStatus) ⚡ PARALLEL GROUP A
 - [ ] Task B2: Migration V8 (jobs, job_files, workspaces.job_counter) ⚡ PARALLEL GROUP A
 - [ ] Task B3: DTOs (JobRequestDTO, JobResponseDTO, JobListItemDTO, JobFileDTO, ClientSummaryDTO, MemberSummaryDTO) ⚡ PARALLEL GROUP A
 - [ ] Task B4: Workspace entity — adicionar campo `jobCounter` (depende de B2)

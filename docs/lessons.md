@@ -3,6 +3,16 @@
 > Arquivo de auto-melhoria contínua. Cada entrada é uma regra acionável que previne erros repetidos entre sessões.
 > Consultar este arquivo no início de cada sessão de implementação.
 
+## [Plan] — Copiar enums da spec literalmente, não reinterpretar
+- **Erro:** No plano do RF04, `JobStatus` foi escrito como `[NOVO, EM_CRIACAO, REVISAO, AGUARDANDO_APROVACAO, APROVADO, ARCHIVED]`, divergindo da spec (`REVISAO_INTERNA`, `PUBLICADO`). Isso virou bug de implementação na Task B1 e só foi pego no code review
+- **Regra:** Ao transcrever enums, tabelas de status, campos de entity ou qualquer vocabulário canônico da spec para o plano de implementação, copiar **byte-a-byte** da spec. Se precisar simplificar ou renomear, atualizar a spec primeiro. Fazer `grep` da lista de valores contra a spec antes de commitar o plano. Na consolidação do plano via Team Lead, cruzar nomes entre spec e drafts dos teammates
+- **Contexto:** Skill `writing-plans`, especialmente quando a spec define enums, estados de máquina ou listas fechadas de valores
+
+## [Domain] — Soft-delete é coluna booleana dedicada, não valor de enum de status
+- **Erro:** No plano do RF04, `JobStatus.ARCHIVED` foi usado como mecanismo de soft-delete, substituindo a coluna `archived BOOLEAN` que a spec definia. Isso criava duas fontes da verdade e ambiguidade: um job `APROVADO` + `archived=true` ficava inconsistente
+- **Regra:** Soft-delete/archive é SEMPRE uma coluna booleana dedicada (`archived`, `deleted`, `is_active`), NUNCA um valor do enum de status do workflow. Status enums representam etapas do ciclo de vida do negócio; archive é ortogonal — um job pode estar em qualquer status e ser arquivado. Queries filtram por `archived = false` como pré-condição separada
+- **Contexto:** Toda entity com soft-delete + máquina de estados (Job, Client futuro, qualquer entity com ciclo de vida + visibilidade)
+
 ## [Angular] — Sempre invocar frontend-design antes de implementar UI (ERRO REINCIDENTE)
 - **Erro:** Implementei login, register e dashboard pages direto do plano sem invocar a skill `frontend-design`. REINCIDÊNCIA na RF02: implementei 5 telas (register mod, invite dialog, member list, accept invite, settings) via subagentes sem invocar frontend-design para nenhuma delas
 - **Regra:** ANTES de escrever qualquer HTML/template/estilo de componente Angular, invocar `frontend-design`. Sem exceções — mesmo que o plano já tenha o template pronto, mesmo que a task seja delegada a subagente. O subagente NÃO substitui a skill de design. A skill deve ser invocada pelo orquestrador ANTES de despachar o subagente implementador
