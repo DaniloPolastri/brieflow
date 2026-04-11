@@ -1,0 +1,100 @@
+<div [formGroup]="formGroup()" class="flex flex-col gap-4">
+  @for (field of schema(); track field.key) {
+    <div class="flex flex-col gap-1.5">
+      <label
+        [for]="field.key"
+        class="text-[13px] font-medium text-gray-700"
+      >
+        {{ field.label }}
+        @if (field.required) {
+          <span class="ml-0.5 text-red-500">*</span>
+        }
+      </label>
+
+      @switch (field.type) {
+        @case ('text') {
+          <input
+            pInputText
+            [id]="field.key"
+            [formControlName]="field.key"
+            [placeholder]="field.label"
+            class="w-full"
+          />
+        }
+        @case ('textarea') {
+          <textarea
+            pTextarea
+            [id]="field.key"
+            [formControlName]="field.key"
+            [placeholder]="field.label"
+            rows="3"
+            class="w-full"
+          ></textarea>
+        }
+        @case ('number') {
+          <p-inputnumber
+            [inputId]="field.key"
+            [formControlName]="field.key"
+            [min]="field.min ?? null"
+            [max]="field.max ?? null"
+            [showButtons]="true"
+            buttonLayout="horizontal"
+            decrementButtonClass="p-button-secondary"
+            incrementButtonClass="p-button-secondary"
+            styleClass="w-full"
+          />
+        }
+        @case ('select') {
+          <p-select
+            [inputId]="field.key"
+            [formControlName]="field.key"
+            [options]="selectOptions(field)"
+            optionLabel="label"
+            optionValue="value"
+            [placeholder]="'Selecione ' + field.label.toLowerCase()"
+            styleClass="w-full"
+          />
+        }
+        @case ('dynamic-list') {
+          <div class="flex flex-col gap-2">
+            @if (asFormArray(field.key).controls.length === 0) {
+              <p class="text-[12px] italic text-gray-400">
+                Defina o número de slides acima para adicionar os textos.
+              </p>
+            }
+            @for (
+              ctrl of asFormArray(field.key).controls;
+              track $index;
+              let i = $index
+            ) {
+              <div class="flex items-start gap-2 rounded-md bg-gray-50 p-2">
+                <span
+                  class="mt-2 flex h-6 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-medium text-indigo-700"
+                >
+                  #{{ i + 1 }}
+                </span>
+                <textarea
+                  pTextarea
+                  [formControl]="$any(ctrl)"
+                  [placeholder]="'Texto do slide ' + (i + 1)"
+                  rows="2"
+                  class="w-full"
+                ></textarea>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @if (isInvalid(field.key)) {
+        <span class="text-[12px] text-red-600">
+          @if (field.required) {
+            Este campo é obrigatório.
+          } @else {
+            Valor inválido.
+          }
+        </span>
+      }
+    </div>
+  }
+</div>
