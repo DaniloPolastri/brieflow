@@ -14,8 +14,11 @@ public final class JobSpecifications {
         return (root, q, cb) -> cb.equal(root.get("workspace").get("id"), workspaceId);
     }
 
-    public static Specification<Job> notArchived() {
-        return (root, q, cb) -> cb.equal(root.get("archived"), false);
+    public static Specification<Job> hasArchived(Boolean archived) {
+        return (root, q, cb) -> {
+            boolean flag = archived != null && archived;
+            return cb.equal(root.get("archived"), flag);
+        };
     }
 
     public static Specification<Job> hasStatus(JobStatus status) {
@@ -36,5 +39,16 @@ public final class JobSpecifications {
 
     public static Specification<Job> assignedCreative(Long memberId) {
         return (root, q, cb) -> memberId == null ? cb.conjunction() : cb.equal(root.get("assignedCreative").get("id"), memberId);
+    }
+
+    public static Specification<Job> titleOrCodeContains(String search) {
+        return (root, q, cb) -> {
+            if (search == null || search.isBlank()) return cb.conjunction();
+            String pattern = "%" + search.toLowerCase() + "%";
+            return cb.or(
+                cb.like(cb.lower(root.get("title")), pattern),
+                cb.like(cb.function("cast", String.class, root.get("sequenceNumber")), pattern)
+            );
+        };
     }
 }

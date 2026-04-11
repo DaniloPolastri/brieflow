@@ -123,7 +123,7 @@ class JobServiceImplTest {
                 .thenReturn(List.of(new Job(), new Job()));
         when(jobMapper.toListItemDTOList(anyList())).thenReturn(List.of());
 
-        service.listJobs(workspaceId, userId, null, null, null, null, null);
+        service.listJobs(workspaceId, userId, null, null, null, null, null, false, null);
 
         verify(jobRepository).findAll(any(Specification.class));
     }
@@ -137,7 +137,7 @@ class JobServiceImplTest {
         when(jobRepository.findVisibleToCreative(workspaceId, creative.getId(), false)).thenReturn(List.of());
         when(jobMapper.toListItemDTOList(anyList())).thenReturn(List.of());
 
-        service.listJobs(workspaceId, userId, null, null, null, null, null);
+        service.listJobs(workspaceId, userId, null, null, null, null, null, false, null);
 
         verify(jobRepository).findVisibleToCreative(workspaceId, creative.getId(), false);
         verify(jobRepository, never()).findAll(any(Specification.class));

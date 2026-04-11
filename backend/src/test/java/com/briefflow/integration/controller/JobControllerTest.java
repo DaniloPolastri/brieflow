@@ -168,6 +168,50 @@ class JobControllerTest {
     }
 
     @Test
+    void should_filterByTitle_when_searchParamProvided() throws Exception {
+        createJob("Post A");
+        createJob("Post B");
+
+        mockMvc.perform(get("/api/v1/jobs")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .param("search", "Post A"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Post A"));
+    }
+
+    @Test
+    void should_returnArchivedJobs_when_archivedTrue() throws Exception {
+        MvcResult active = createJob("Active job");
+        MvcResult toArchive = createJob("Archived job");
+        Long archivedId = extractId(toArchive);
+
+        mockMvc.perform(patch("/api/v1/jobs/" + archivedId + "/archive")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"archived\":true}"))
+                .andExpect(status().isOk());
+
+        // Default (archived=false) returns only active job
+        mockMvc.perform(get("/api/v1/jobs")
+                        .header("Authorization", "Bearer " + managerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Active job"));
+
+        // archived=true returns only archived job
+        mockMvc.perform(get("/api/v1/jobs")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .param("archived", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Archived job"));
+
+        // sanity: suppress unused-variable warning
+        assert active != null;
+    }
+
+    @Test
     void should_returnJobDetail_200_when_getById() throws Exception {
         MvcResult create = createJob("Detail job");
         Long jobId = extractId(create);

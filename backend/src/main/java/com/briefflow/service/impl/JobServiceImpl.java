@@ -38,11 +38,12 @@ import java.util.UUID;
 
 import static com.briefflow.repository.JobSpecifications.assignedCreative;
 import static com.briefflow.repository.JobSpecifications.forClient;
+import static com.briefflow.repository.JobSpecifications.hasArchived;
 import static com.briefflow.repository.JobSpecifications.hasPriority;
 import static com.briefflow.repository.JobSpecifications.hasStatus;
 import static com.briefflow.repository.JobSpecifications.hasType;
 import static com.briefflow.repository.JobSpecifications.inWorkspace;
-import static com.briefflow.repository.JobSpecifications.notArchived;
+import static com.briefflow.repository.JobSpecifications.titleOrCodeContains;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -123,22 +124,49 @@ public class JobServiceImpl implements JobService {
     @Transactional(readOnly = true)
     public List<JobListItemDTO> listJobs(Long workspaceId, Long userId,
                                          JobStatus status, JobType type, JobPriority priority,
-                                         Long clientId, Long assignedCreativeId) {
+                                         Long clientId, Long assignedCreativeId,
+                                         Boolean archived, String search) {
         Member caller = requireMember(userId, workspaceId);
+        boolean archivedFlag = archived != null && archived;
         List<Job> jobs;
         if (caller.getRole() == MemberRole.CREATIVE) {
-            jobs = jobRepository.findVisibleToCreative(workspaceId, caller.getId(), false);
+            // CREATIVE path uses a dedicated JPQL method for visibility.
+            // Filters are applied in-memory after the fetch.
+            // TODO: push filters down to SQL in v2 when the dataset grows.
+            jobs = jobRepository.findVisibleToCreative(workspaceId, caller.getId(), archivedFlag);
+            jobs = applyFiltersInMemory(jobs, status, type, priority, clientId, assignedCreativeId, search);
         } else {
             Specification<Job> spec = Specification.where(inWorkspace(workspaceId))
-                    .and(notArchived())
+                    .and(hasArchived(archived))
                     .and(hasStatus(status))
                     .and(hasType(type))
                     .and(hasPriority(priority))
                     .and(forClient(clientId))
-                    .and(assignedCreative(assignedCreativeId));
+                    .and(assignedCreative(assignedCreativeId))
+                    .and(titleOrCodeContains(search));
             jobs = jobRepository.findAll(spec);
         }
         return jobMapper.toListItemDTOList(jobs);
+    }
+
+    private List<Job> applyFiltersInMemory(List<Job> jobs,
+                                           JobStatus status, JobType type, JobPriority priority,
+                                           Long clientId, Long assignedCreativeId, String search) {
+        String s = (search == null || search.isBlank()) ? null : search.toLowerCase();
+        return jobs.stream()
+                .filter(j -> status == null || j.getStatus() == status)
+                .filter(j -> type == null || j.getType() == type)
+                .filter(j -> priority == null || j.getPriority() == priority)
+                .filter(j -> clientId == null
+                        || (j.getClient() != null && clientId.equals(j.getClient().getId())))
+                .filter(j -> assignedCreativeId == null
+                        || (j.getAssignedCreative() != null
+                            && assignedCreativeId.equals(j.getAssignedCreative().getId())))
+                .filter(j -> s == null
+                        || (j.getTitle() != null && j.getTitle().toLowerCase().contains(s))
+                        || (j.getSequenceNumber() != null
+                            && String.valueOf(j.getSequenceNumber()).contains(s)))
+                .toList();
     }
 
     @Override

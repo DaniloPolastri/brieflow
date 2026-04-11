@@ -46,8 +46,11 @@ public class JobController {
             @RequestParam(required = false) JobType type,
             @RequestParam(required = false) JobPriority priority,
             @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) Long assignedCreativeId) {
-        return ResponseEntity.ok(jobService.listJobs(workspaceId, userId, status, type, priority, clientId, assignedCreativeId));
+            @RequestParam(required = false) Long assignedCreativeId,
+            @RequestParam(required = false, defaultValue = "false") Boolean archived,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(jobService.listJobs(
+                workspaceId, userId, status, type, priority, clientId, assignedCreativeId, archived, search));
     }
 
     @GetMapping("/{id}")

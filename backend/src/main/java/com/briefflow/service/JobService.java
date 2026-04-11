@@ -16,7 +16,8 @@ public interface JobService {
 
     List<JobListItemDTO> listJobs(Long workspaceId, Long userId,
                                   JobStatus status, JobType type, JobPriority priority,
-                                  Long clientId, Long assignedCreativeId);
+                                  Long clientId, Long assignedCreativeId,
+                                  Boolean archived, String search);
 
     JobResponseDTO getJob(Long workspaceId, Long userId, Long jobId);
 
