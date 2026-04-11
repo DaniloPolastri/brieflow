@@ -1,0 +1,56 @@
+<div class="mx-auto max-w-[1280px] px-8 py-8">
+  @if (job(); as j) {
+    <!-- Header -->
+    <div class="mb-6">
+      <div class="mb-1 flex items-center gap-1 text-[12px] text-gray-500">
+        <a routerLink="/jobs" class="hover:text-indigo-600">Jobs</a>
+        <span>/</span>
+        <a [routerLink]="['/jobs', j.id]" class="hover:text-indigo-600">
+          {{ j.code }}
+        </a>
+        <span>/</span>
+        <span class="text-gray-600">Editar</span>
+      </div>
+      <h2 class="text-[24px] font-semibold tracking-tight text-gray-900">
+        Editar job
+        <span class="ml-1 font-mono text-[16px] font-normal text-gray-500">
+          {{ j.code }}
+        </span>
+      </h2>
+      <p class="mt-1 text-[14px] text-gray-500">
+        Atualize as informações e o briefing deste job.
+      </p>
+    </div>
+
+    <!-- Grid: form + sidebar -->
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
+      <main>
+        <app-job-form
+          mode="edit"
+          [initialJob]="j"
+          [jobId]="j.id"
+          [existingFiles]="existingFiles()"
+          (submitted)="onFormSubmit($event)"
+          (fileUploaded)="onFileUploaded($event)"
+          (fileDeleted)="onFileDeleted($event)"
+        />
+      </main>
+
+      @if (formGroup(); as fg) {
+        <app-job-summary-sidebar
+          [form]="fg"
+          mode="edit"
+          [loading]="loading()"
+          (save)="onSave()"
+          (cancel)="onCancel()"
+        />
+      }
+    </div>
+  } @else {
+    <div class="flex items-center justify-center py-16">
+      <i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i>
+    </div>
+  }
+
+  <p-toast position="bottom-right" />
+</div>
