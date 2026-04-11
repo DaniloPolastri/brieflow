@@ -28,12 +28,19 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     Optional<Job> findByIdAndWorkspaceId(Long id, Long workspaceId);
 
+    /**
+     * Atomically increments the workspace's job_counter and returns the new value.
+     * Uses PostgreSQL's UPDATE ... RETURNING so the read-modify-write is a single
+     * round-trip and safe under concurrent inserts. The query is intentionally NOT
+     * annotated with {@link Modifying} because Spring Data JPA requires modifying
+     * queries to return void/int/Integer — treating this as a regular native query
+     * keeps the single-round-trip semantics and lets us return the new counter value.
+     */
     @Query(value = """
         UPDATE workspaces SET job_counter = job_counter + 1
         WHERE id = :workspaceId
         RETURNING job_counter
     """, nativeQuery = true)
-    @Modifying
     Long incrementAndGetJobCounter(@Param("workspaceId") Long workspaceId);
 
     @Query("""

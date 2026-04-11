@@ -118,3 +118,8 @@
 - **Erro:** `AssignMembersRequestDTO` aceitava `List<Long>` sem `@NotNull` nos elementos. Lista `[null, 5, null]` passava validação e causava NPE no service
 - **Regra:** Em DTOs com listas, SEMPRE anotar os elementos: `List<@NotNull Long>`. Isso rejeita null na camada de validação
 - **Contexto:** Todos os DTOs de request que recebem listas de IDs ou valores
+
+## [JPA] — `@Modifying` é incompatível com `RETURNING` nativo (retornos não-void)
+- **Erro:** `JobRepository.incrementAndGetJobCounter` estava anotado com `@Modifying` E retornava `Long` via native query `UPDATE ... RETURNING`. Spring Data JPA rejeita em runtime: "Modifying queries can only use void or int/Integer as return type". O método nunca foi exercitado em integration test até B11 — os unit tests mockavam a chamada, então o bug passou por code review sem ser detectado. Em produção, qualquer criação de job quebraria com `InvalidDataAccessApiUsageException`
+- **Regra:** Quando uma query nativa PostgreSQL usa `UPDATE ... RETURNING` (ou `INSERT ... RETURNING`, `DELETE ... RETURNING`) e retorna um valor para o chamador, NÃO colocar `@Modifying`. Spring Data trata a query como SELECT (porque tem result set) e o ORM executa corretamente dentro da transação ativa. `@Modifying` só serve quando o método retorna `void`, `int` ou `Integer` (rowcount)
+- **Contexto:** Qualquer repository method que usa `RETURNING` em query nativa. Adicionalmente: toda query repository method que não é trivialmente mockável (queries nativas com SQL específico do Postgres) PRECISA de um integration test com Testcontainers — unit tests com mock ocultam bugs desse tipo
