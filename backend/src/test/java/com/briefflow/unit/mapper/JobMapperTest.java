@@ -56,6 +56,7 @@ class JobMapperTest {
         assertEquals("Client A", dto.client().name());
         assertEquals(30L, dto.assignedCreative().id());
         assertEquals("Alice", dto.assignedCreative().name());
+        assertEquals("Alice", dto.createdByName());
         assertEquals("hello", dto.briefingData().get("captionText"));
         assertNotNull(dto.createdAt());
         assertFalse(dto.overdue());
@@ -82,7 +83,9 @@ class JobMapperTest {
         assertEquals(j.getId(), item.id());
         assertEquals("JOB-001", item.code());
         assertEquals(j.getTitle(), item.title());
-        assertNotNull(item.client());
+        assertEquals("C", item.clientName());
+        assertEquals("U", item.assignedCreativeName());
+        assertFalse(item.isOverdue());
     }
 
     private Job jobWithDeadline(LocalDate deadline, JobStatus status) {

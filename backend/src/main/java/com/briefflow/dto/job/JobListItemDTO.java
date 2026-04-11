@@ -8,11 +8,11 @@ public record JobListItemDTO(
     Long id,
     String code,
     String title,
+    String clientName,
     JobType type,
-    JobPriority priority,
-    JobStatus status,
     String deadline,
-    ClientSummaryDTO client,
-    MemberSummaryDTO assignedCreative,
-    boolean overdue
+    JobPriority priority,
+    String assignedCreativeName,
+    JobStatus status,
+    Boolean isOverdue
 ) {}

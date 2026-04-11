@@ -162,7 +162,9 @@ class JobControllerTest {
         mockMvc.perform(get("/api/v1/jobs")
                         .header("Authorization", "Bearer " + managerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].clientName").value("Acme Corp"))
+                .andExpect(jsonPath("$[0].isOverdue").value(false));
     }
 
     @Test

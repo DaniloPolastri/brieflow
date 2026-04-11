@@ -20,7 +20,7 @@ public interface JobMapper {
     @Mapping(target = "code", expression = "java(job.getCode())")
     @Mapping(target = "client", source = "client")
     @Mapping(target = "assignedCreative", source = "assignedCreative")
-    @Mapping(target = "createdBy", expression = "java(mapUserAsMember(job))")
+    @Mapping(target = "createdByName", expression = "java(job.getCreatedBy() != null ? job.getCreatedBy().getName() : null)")
     @Mapping(target = "deadline", source = "deadline", qualifiedByName = "formatDate")
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "formatDateTime")
     @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "formatDateTime")
@@ -28,10 +28,10 @@ public interface JobMapper {
     JobResponseDTO toResponseDTO(Job job);
 
     @Mapping(target = "code", expression = "java(job.getCode())")
-    @Mapping(target = "client", source = "client")
-    @Mapping(target = "assignedCreative", source = "assignedCreative")
+    @Mapping(target = "clientName", source = "client.name")
+    @Mapping(target = "assignedCreativeName", expression = "java(job.getAssignedCreative() != null && job.getAssignedCreative().getUser() != null ? job.getAssignedCreative().getUser().getName() : null)")
     @Mapping(target = "deadline", source = "deadline", qualifiedByName = "formatDate")
-    @Mapping(target = "overdue", expression = "java(isOverdue(job))")
+    @Mapping(target = "isOverdue", expression = "java(isOverdue(job))")
     JobListItemDTO toListItemDTO(Job job);
 
     List<JobListItemDTO> toListItemDTOList(List<Job> jobs);
@@ -53,17 +53,6 @@ public interface JobMapper {
     @Mapping(target = "email", source = "user.email")
     @Mapping(target = "role", source = "role")
     MemberSummaryDTO memberToSummary(Member member);
-
-    default MemberSummaryDTO mapUserAsMember(Job job) {
-        if (job.getCreatedBy() == null) return null;
-        return new MemberSummaryDTO(
-            null,
-            job.getCreatedBy().getId(),
-            job.getCreatedBy().getName(),
-            job.getCreatedBy().getEmail(),
-            null
-        );
-    }
 
     default boolean isOverdue(Job job) {
         if (job.getDeadline() == null) return false;
