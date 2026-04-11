@@ -194,6 +194,41 @@ class JobServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void should_applyFiltersInMemory_when_callerIsCreative() {
+        Long userId = 1L, workspaceId = 2L;
+        Member creative = createMember(10L, userId, workspaceId, MemberRole.CREATIVE);
+        when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(creative));
+
+        Job matching = new Job();
+        matching.setTitle("Match Post");
+        matching.setStatus(JobStatus.NOVO);
+        matching.setType(JobType.POST_FEED);
+        matching.setPriority(JobPriority.NORMAL);
+        matching.setSequenceNumber(1);
+
+        Job filtered = new Job();
+        filtered.setTitle("Other");
+        filtered.setStatus(JobStatus.EM_CRIACAO);
+        filtered.setType(JobType.POST_FEED);
+        filtered.setPriority(JobPriority.NORMAL);
+        filtered.setSequenceNumber(2);
+
+        when(jobRepository.findVisibleToCreative(workspaceId, creative.getId(), false))
+                .thenReturn(List.of(matching, filtered));
+        when(jobMapper.toListItemDTOList(anyList())).thenAnswer(inv -> {
+            List<Job> list = inv.getArgument(0);
+            assertEquals(1, list.size());
+            assertEquals("Match Post", list.get(0).getTitle());
+            return List.of();
+        });
+
+        service.listJobs(workspaceId, userId, JobStatus.NOVO, null, null, null, null, false, "Match");
+
+        verify(jobRepository).findVisibleToCreative(workspaceId, creative.getId(), false);
+    }
+
+    @Test
     void should_archiveJob_when_callerIsManager() {
         Long userId = 1L, workspaceId = 2L;
         Member manager = createMember(10L, userId, workspaceId, MemberRole.MANAGER);
