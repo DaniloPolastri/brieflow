@@ -5,6 +5,8 @@ import com.briefflow.dto.job.JobFileDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
+import com.briefflow.dto.job.JobStatusResponseDTO;
+import com.briefflow.dto.job.UpdateJobStatusDTO;
 import com.briefflow.enums.JobPriority;
 import com.briefflow.enums.JobStatus;
 import com.briefflow.enums.JobType;
@@ -78,6 +80,15 @@ public class JobController {
             @PathVariable Long id,
             @Valid @RequestBody ArchiveJobRequestDTO request) {
         return ResponseEntity.ok(jobService.archiveJob(workspaceId, userId, id, request.archived()));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<JobStatusResponseDTO> updateStatus(
+            @RequestAttribute("workspaceId") Long workspaceId,
+            @RequestAttribute("userId") Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateJobStatusDTO request) {
+        return ResponseEntity.ok(jobService.updateJobStatus(workspaceId, userId, id, request));
     }
 
     @PostMapping(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -18,29 +18,29 @@
 
 ### Backend (B1–B8)
 
-- [ ] Task B1: DTOs (UpdateJobStatusDTO, JobStatusResponseDTO, JobStatusEvent)
-- [ ] Task B2: JobSseService (SSE emitter manager + @Scheduled heartbeat) ⚡ PARALLEL GROUP A
-- [ ] Task B3: @EnableScheduling + SecurityConfig changes ⚡ PARALLEL GROUP A
-- [ ] Task B4: updateJobStatus in JobService/JobServiceImpl (depends on B1)
-- [ ] Task B5: PATCH endpoint in JobController (depends on B4)
-- [ ] Task B6: JobSseController — SSE stream endpoint (depends on B2, B3)
-- [ ] Task B7: Unit tests — JobServiceImplTest + JobSseServiceTest (depends on B4, B2)
-- [ ] Task B8: Integration tests — JobControllerTest + JobSseControllerTest (depends on B5, B6)
+- [x] Task B1: DTOs (UpdateJobStatusDTO, JobStatusResponseDTO, JobStatusEvent)
+- [x] Task B2: JobSseService (SSE emitter manager + @Scheduled heartbeat) ⚡ PARALLEL GROUP A
+- [x] Task B3: @EnableScheduling + SecurityConfig changes ⚡ PARALLEL GROUP A
+- [x] Task B4: updateJobStatus in JobService/JobServiceImpl (depends on B1)
+- [x] Task B5: PATCH endpoint in JobController (depends on B4)
+- [x] Task B6: JobSseController — SSE stream endpoint (depends on B2, B3)
+- [x] Task B7: Unit tests — JobServiceImplTest + JobSseServiceTest (depends on B4, B2)
+- [x] Task B8: Integration tests — JobControllerTest + JobSseControllerTest (depends on B5, B6)
 
 ### Frontend (F1–F12)
 
-- [ ] Task F1: Install @angular/cdk + add RF05 types to job.model.ts
-- [ ] Task F2: JobSseService — EventSource wrapper with Observable ⚡ PARALLEL GROUP B
-- [ ] Task F3: JobApiService.updateStatus() method ⚡ PARALLEL GROUP B
-- [ ] Task F4: frontend-design for KanbanCardComponent
-- [ ] Task F5: KanbanCardComponent implementation (TDD) — depends on F1
-- [ ] Task F6: frontend-design for KanbanColumnComponent
-- [ ] Task F7: KanbanColumnComponent implementation (TDD) — depends on F5
-- [ ] Task F8: frontend-design for KanbanBoardComponent
-- [ ] Task F9: KanbanBoardComponent implementation — drag-drop + SSE (TDD) — depends on F2, F3, F7, **B5 backend**
-- [ ] Task F10: frontend-design for JobListComponent toggle (lista/kanban + meus jobs)
-- [ ] Task F11: JobListComponent modification — view toggle + kanban integration (TDD) — depends on F9
-- [ ] Task F12: Smoke test — build + all tests green — depends on B8, F11
+- [x] Task F1: Install @angular/cdk + add RF05 types to job.model.ts
+- [x] Task F2: JobSseService — EventSource wrapper with Observable ⚡ PARALLEL GROUP B
+- [x] Task F3: JobApiService.updateStatus() method ⚡ PARALLEL GROUP B
+- [x] Task F4: frontend-design for KanbanCardComponent
+- [x] Task F5: KanbanCardComponent implementation (TDD) — depends on F1
+- [x] Task F6: frontend-design for KanbanColumnComponent
+- [x] Task F7: KanbanColumnComponent implementation (TDD) — depends on F5
+- [x] Task F8: frontend-design for KanbanBoardComponent
+- [x] Task F9: KanbanBoardComponent implementation — drag-drop + SSE (TDD) — depends on F2, F3, F7, **B5 backend**
+- [x] Task F10: frontend-design for JobListComponent toggle (lista/kanban + meus jobs)
+- [x] Task F11: JobListComponent modification — view toggle + kanban integration (TDD) — depends on F9
+- [x] Task F12: Smoke test — build + all tests green — depends on B8, F11
 
 ---
 

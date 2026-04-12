@@ -238,7 +238,7 @@ class JobControllerTest {
     }
 
     @Test
-    void should_return403_when_creativeTriesCreate() throws Exception {
+    void should_return201_when_creativeCreatesJob() throws Exception {
         // Create a CREATIVE user directly attached to the existing workspace
         Workspace workspace = workspaceRepository.findById(workspaceId).orElseThrow();
         User creativeUser = new User();
@@ -260,19 +260,20 @@ class JobControllerTest {
         JobRequestDTO request = new JobRequestDTO(
                 clientId,
                 null,
-                "Should be forbidden",
+                "Creative can create",
                 JobType.POST_FEED,
                 JobPriority.NORMAL,
                 null,
-                null,
-                Map.of("captionText", "nope", "format", "1:1")
+                LocalDate.now().plusDays(3),
+                Map.of("captionText", "creative job", "format", "1:1")
         );
 
         mockMvc.perform(post("/api/v1/jobs")
                         .header("Authorization", "Bearer " + creativeToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").exists());
     }
 
     @Test
@@ -294,6 +295,47 @@ class JobControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnprocessableEntity());
+    }
+
+    // ---------- RF05: PATCH /status tests ----------
+
+    @Test
+    void should_patchStatus_200() throws Exception {
+        MvcResult create = createJob("Status test job");
+        Long jobId = extractId(create);
+
+        String body = """
+            {"status": "EM_CRIACAO", "confirm": false}
+            """;
+
+        mockMvc.perform(patch("/api/v1/jobs/" + jobId + "/status")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applied").value(true))
+                .andExpect(jsonPath("$.newStatus").value("EM_CRIACAO"))
+                .andExpect(jsonPath("$.previousStatus").value("NOVO"))
+                .andExpect(jsonPath("$.skippedSteps").value(false));
+    }
+
+    @Test
+    void should_patchStatus_return_skippedSteps() throws Exception {
+        MvcResult create = createJob("Skip test job");
+        Long jobId = extractId(create);
+
+        // Job is NOVO, move to REVISAO_INTERNA (skip EM_CRIACAO)
+        String body = """
+            {"status": "REVISAO_INTERNA", "confirm": false}
+            """;
+
+        mockMvc.perform(patch("/api/v1/jobs/" + jobId + "/status")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.skippedSteps").value(true))
+                .andExpect(jsonPath("$.applied").value(false));
     }
 
     // ---------- helpers ----------

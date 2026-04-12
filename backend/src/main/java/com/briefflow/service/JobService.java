@@ -4,6 +4,8 @@ import com.briefflow.dto.job.JobFileDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
+import com.briefflow.dto.job.JobStatusResponseDTO;
+import com.briefflow.dto.job.UpdateJobStatusDTO;
 import com.briefflow.enums.JobPriority;
 import com.briefflow.enums.JobStatus;
 import com.briefflow.enums.JobType;
@@ -31,4 +33,6 @@ public interface JobService {
     void deleteFile(Long workspaceId, Long userId, Long jobId, Long fileId);
 
     Resource downloadFile(Long workspaceId, Long userId, Long jobId, Long fileId);
+
+    JobStatusResponseDTO updateJobStatus(Long workspaceId, Long userId, Long jobId, UpdateJobStatusDTO dto);
 }

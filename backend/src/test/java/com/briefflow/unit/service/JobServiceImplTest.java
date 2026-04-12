@@ -2,6 +2,8 @@ package com.briefflow.unit.service;
 
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
+import com.briefflow.dto.job.JobStatusResponseDTO;
+import com.briefflow.dto.job.UpdateJobStatusDTO;
 import com.briefflow.entity.Client;
 import com.briefflow.entity.Job;
 import com.briefflow.entity.Member;
@@ -23,6 +25,7 @@ import com.briefflow.repository.MemberRepository;
 import com.briefflow.repository.UserRepository;
 import com.briefflow.repository.WorkspaceRepository;
 import com.briefflow.service.FileStorageService;
+import com.briefflow.service.JobSseService;
 import com.briefflow.service.briefing.BriefingValidator;
 import com.briefflow.service.impl.JobServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +57,7 @@ class JobServiceImplTest {
     @Mock private JobMapper jobMapper;
     @Mock private BriefingValidator briefingValidator;
     @Mock private FileStorageService fileStorageService;
+    @Mock private JobSseService jobSseService;
 
     private JobServiceImpl service;
 
@@ -62,7 +66,7 @@ class JobServiceImplTest {
         service = new JobServiceImpl(
             jobRepository, jobFileRepository, clientRepository, memberRepository,
             clientMemberRepository, userRepository, workspaceRepository,
-            jobMapper, briefingValidator, fileStorageService
+            jobMapper, briefingValidator, fileStorageService, jobSseService
         );
     }
 
@@ -89,16 +93,24 @@ class JobServiceImplTest {
     }
 
     @Test
-    void should_throwForbidden_when_creativeTriesToCreateJob() {
+    void should_allowCreativeToCreateJob() {
         Long userId = 1L, workspaceId = 2L;
         Member creative = createMember(10L, userId, workspaceId, MemberRole.CREATIVE);
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(creative));
+        when(clientRepository.findByIdAndWorkspaceId(100L, workspaceId)).thenReturn(Optional.of(createClient(100L, workspaceId)));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(creative.getUser()));
+        when(jobRepository.incrementAndGetJobCounter(workspaceId)).thenReturn(1L);
+        when(jobRepository.save(any(Job.class))).thenAnswer(inv -> {
+            Job j = inv.getArgument(0); j.setId(500L); return j;
+        });
+        when(jobMapper.toResponseDTO(any(Job.class))).thenReturn(mock(JobResponseDTO.class));
 
         JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1"));
+        JobResponseDTO dto = service.createJob(workspaceId, userId, req);
 
-        assertThrows(ForbiddenException.class, () -> service.createJob(workspaceId, userId, req));
-        verify(jobRepository, never()).save(any());
+        assertNotNull(dto);
+        verify(jobRepository).save(any(Job.class));
     }
 
     @Test
@@ -269,5 +281,114 @@ class JobServiceImplTest {
     private Client createClient(Long id, Long workspaceId) {
         Client c = new Client(); c.setId(id); c.setName("C" + id);
         c.setWorkspace(createWorkspace(workspaceId)); c.setActive(true); return c;
+    }
+
+    // --- RF05 helpers ---
+
+    private Member buildMember(Long id, MemberRole role) {
+        Member member = new Member();
+        member.setId(id);
+        member.setRole(role);
+        return member;
+    }
+
+    private Job buildJob(Long id, String code, JobStatus status, Member assignee) {
+        Job job = new Job();
+        job.setId(id);
+        job.setSequenceNumber(Integer.parseInt(code.replace("JOB-", "")));
+        job.setStatus(status);
+        job.setAssignedCreative(assignee);
+        Client client = new Client();
+        client.setId(50L);
+        job.setClient(client);
+        return job;
+    }
+
+    // --- RF05 tests: updateJobStatus ---
+
+    @Test
+    void should_updateStatus_when_managerMoves() {
+        Member manager = buildMember(1L, MemberRole.MANAGER);
+        Job job = buildJob(10L, "JOB-001", JobStatus.NOVO, null);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 100L)).thenReturn(Optional.of(manager));
+        when(jobRepository.findByIdAndWorkspaceId(10L, 100L)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(Job.class))).thenReturn(job);
+
+        UpdateJobStatusDTO dto = new UpdateJobStatusDTO(JobStatus.EM_CRIACAO, false);
+        JobStatusResponseDTO result = service.updateJobStatus(100L, 1L, 10L, dto);
+
+        assertTrue(result.applied());
+        assertFalse(result.skippedSteps());
+        assertEquals(JobStatus.EM_CRIACAO, result.newStatus());
+        verify(jobRepository).save(job);
+    }
+
+    @Test
+    void should_throwForbidden_when_creativeMovesOtherJob() {
+        Member creative = buildMember(2L, MemberRole.CREATIVE);
+        Member otherCreative = buildMember(3L, MemberRole.CREATIVE);
+        Job job = buildJob(10L, "JOB-001", JobStatus.NOVO, otherCreative);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(2L, 100L)).thenReturn(Optional.of(creative));
+        when(jobRepository.findByIdAndWorkspaceId(10L, 100L)).thenReturn(Optional.of(job));
+
+        UpdateJobStatusDTO dto = new UpdateJobStatusDTO(JobStatus.EM_CRIACAO, false);
+        assertThrows(ForbiddenException.class,
+                () -> service.updateJobStatus(100L, 2L, 10L, dto));
+
+        verify(jobRepository, never()).save(any());
+    }
+
+    @Test
+    void should_returnSkippedSteps_when_forwardSkipWithoutConfirm() {
+        Member manager = buildMember(1L, MemberRole.MANAGER);
+        Job job = buildJob(10L, "JOB-001", JobStatus.NOVO, null);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 100L)).thenReturn(Optional.of(manager));
+        when(jobRepository.findByIdAndWorkspaceId(10L, 100L)).thenReturn(Optional.of(job));
+
+        UpdateJobStatusDTO dto = new UpdateJobStatusDTO(JobStatus.REVISAO_INTERNA, false);
+        JobStatusResponseDTO result = service.updateJobStatus(100L, 1L, 10L, dto);
+
+        assertTrue(result.skippedSteps());
+        assertFalse(result.applied());
+        assertEquals(JobStatus.NOVO, job.getStatus()); // not changed
+        verify(jobRepository, never()).save(any());
+    }
+
+    @Test
+    void should_applyStatus_when_confirmedSkip() {
+        Member manager = buildMember(1L, MemberRole.MANAGER);
+        Job job = buildJob(10L, "JOB-001", JobStatus.NOVO, null);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 100L)).thenReturn(Optional.of(manager));
+        when(jobRepository.findByIdAndWorkspaceId(10L, 100L)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(Job.class))).thenReturn(job);
+
+        UpdateJobStatusDTO dto = new UpdateJobStatusDTO(JobStatus.REVISAO_INTERNA, true);
+        JobStatusResponseDTO result = service.updateJobStatus(100L, 1L, 10L, dto);
+
+        assertTrue(result.applied());
+        assertTrue(result.skippedSteps());
+        assertEquals(JobStatus.REVISAO_INTERNA, result.newStatus());
+        verify(jobRepository).save(job);
+    }
+
+    @Test
+    void should_allowBackwardMove_withoutConfirm() {
+        Member manager = buildMember(1L, MemberRole.MANAGER);
+        Job job = buildJob(10L, "JOB-001", JobStatus.REVISAO_INTERNA, null);
+
+        when(memberRepository.findByUserIdAndWorkspaceId(1L, 100L)).thenReturn(Optional.of(manager));
+        when(jobRepository.findByIdAndWorkspaceId(10L, 100L)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(Job.class))).thenReturn(job);
+
+        UpdateJobStatusDTO dto = new UpdateJobStatusDTO(JobStatus.EM_CRIACAO, false);
+        JobStatusResponseDTO result = service.updateJobStatus(100L, 1L, 10L, dto);
+
+        assertTrue(result.applied());
+        assertFalse(result.skippedSteps());
+        verify(jobRepository).save(job);
     }
 }

@@ -3,6 +3,7 @@ import {
   Component,
   inject,
   signal,
+  computed,
   OnInit,
   OnDestroy,
 } from '@angular/core';
@@ -23,6 +24,7 @@ import { ConfirmationService, MenuItem } from 'primeng/api';
 import { JobApiService } from '@features/jobs/services/job-api.service';
 import { MemberApiService } from '@features/members/services/member-api.service';
 import { StorageService } from '@core/services/storage.service';
+import { KanbanBoardComponent } from '@features/jobs/components/kanban-board/kanban-board.component';
 import type {
   JobListItem,
   JobType,
@@ -73,6 +75,7 @@ const PRIORITY_LABELS: Record<JobPriority, string> = {
     MenuModule,
     TagModule,
     ConfirmDialogModule,
+    KanbanBoardComponent,
   ],
   templateUrl: './job-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -96,7 +99,22 @@ export class JobListComponent implements OnInit, OnDestroy {
 
   readonly creativeOptions = signal<{ label: string; value: number }[]>([]);
 
-  private clientId: number | null = null;
+  clientId: number | null = null;
+
+  readonly viewMode = signal<'list' | 'kanban'>(
+    (localStorage.getItem('jobViewMode') as 'list' | 'kanban') ?? 'kanban',
+  );
+
+  readonly myJobsOnly = signal<boolean>(
+    this.storage.getUser()?.role === 'CREATIVE',
+  );
+
+  readonly filteredJobs = computed(() => {
+    const jobs = this.jobs();
+    if (!this.myJobsOnly()) return jobs;
+    const userId = this.currentUser?.id;
+    return jobs.filter(j => j.assignedCreativeId === userId);
+  });
 
   readonly typeOptions = [
     { label: 'Post Feed', value: 'POST_FEED' as JobType },
@@ -192,6 +210,15 @@ export class JobListComponent implements OnInit, OnDestroy {
 
   onFilterChange(): void {
     this.loadJobs();
+  }
+
+  setViewMode(mode: 'list' | 'kanban'): void {
+    this.viewMode.set(mode);
+    localStorage.setItem('jobViewMode', mode);
+  }
+
+  toggleMyJobs(): void {
+    this.myJobsOnly.update(v => !v);
   }
 
   goToNew(): void {

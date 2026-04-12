@@ -29,6 +29,7 @@ public interface JobMapper {
 
     @Mapping(target = "code", expression = "java(job.getCode())")
     @Mapping(target = "clientName", source = "client.name")
+    @Mapping(target = "assignedCreativeId", expression = "java(job.getAssignedCreative() != null && job.getAssignedCreative().getUser() != null ? job.getAssignedCreative().getUser().getId() : null)")
     @Mapping(target = "assignedCreativeName", expression = "java(job.getAssignedCreative() != null && job.getAssignedCreative().getUser() != null ? job.getAssignedCreative().getUser().getName() : null)")
     @Mapping(target = "deadline", source = "deadline", qualifiedByName = "formatDate")
     @Mapping(target = "isOverdue", expression = "java(isOverdue(job))")

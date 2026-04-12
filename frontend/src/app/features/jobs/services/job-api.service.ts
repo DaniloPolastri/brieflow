@@ -2,7 +2,16 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpEvent, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import type { Job, JobFile, JobListFilters, JobListItem, JobRequest } from '../models/job.model';
+import type {
+  Job,
+  JobFile,
+  JobListFilters,
+  JobListItem,
+  JobRequest,
+  JobStatus,
+  JobStatusResponse,
+  UpdateJobStatusRequest,
+} from '../models/job.model';
 
 @Injectable({ providedIn: 'root' })
 export class JobApiService {
@@ -55,5 +64,10 @@ export class JobApiService {
 
   downloadUrl(jobId: number, fileId: number): string {
     return `${this.baseUrl}/${jobId}/files/${fileId}/download`;
+  }
+
+  updateStatus(jobId: number, status: JobStatus, confirm = false): Observable<JobStatusResponse> {
+    const body: UpdateJobStatusRequest = { status, confirm };
+    return this.http.patch<JobStatusResponse>(`${this.baseUrl}/${jobId}/status`, body);
   }
 }

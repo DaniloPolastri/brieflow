@@ -4,6 +4,9 @@ import com.briefflow.dto.job.JobFileDTO;
 import com.briefflow.dto.job.JobListItemDTO;
 import com.briefflow.dto.job.JobRequestDTO;
 import com.briefflow.dto.job.JobResponseDTO;
+import com.briefflow.dto.job.JobStatusEvent;
+import com.briefflow.dto.job.JobStatusResponseDTO;
+import com.briefflow.dto.job.UpdateJobStatusDTO;
 import com.briefflow.entity.Client;
 import com.briefflow.entity.Job;
 import com.briefflow.entity.JobFile;
@@ -26,6 +29,7 @@ import com.briefflow.repository.UserRepository;
 import com.briefflow.repository.WorkspaceRepository;
 import com.briefflow.service.FileStorageService;
 import com.briefflow.service.JobService;
+import com.briefflow.service.JobSseService;
 import com.briefflow.service.briefing.BriefingValidator;
 import org.springframework.core.io.Resource;
 import org.springframework.data.jpa.domain.Specification;
@@ -65,12 +69,14 @@ public class JobServiceImpl implements JobService {
     private final JobMapper jobMapper;
     private final BriefingValidator briefingValidator;
     private final FileStorageService fileStorageService;
+    private final JobSseService jobSseService;
 
     public JobServiceImpl(JobRepository jobRepository, JobFileRepository jobFileRepository,
                           ClientRepository clientRepository, MemberRepository memberRepository,
                           ClientMemberRepository clientMemberRepository, UserRepository userRepository,
                           WorkspaceRepository workspaceRepository, JobMapper jobMapper,
-                          BriefingValidator briefingValidator, FileStorageService fileStorageService) {
+                          BriefingValidator briefingValidator, FileStorageService fileStorageService,
+                          JobSseService jobSseService) {
         this.jobRepository = jobRepository;
         this.jobFileRepository = jobFileRepository;
         this.clientRepository = clientRepository;
@@ -81,12 +87,13 @@ public class JobServiceImpl implements JobService {
         this.jobMapper = jobMapper;
         this.briefingValidator = briefingValidator;
         this.fileStorageService = fileStorageService;
+        this.jobSseService = jobSseService;
     }
 
     @Override
     @Transactional
     public JobResponseDTO createJob(Long workspaceId, Long userId, JobRequestDTO req) {
-        Member caller = requireOwnerOrManager(userId, workspaceId);
+        Member caller = requireMember(userId, workspaceId);
         briefingValidator.validate(req.type(), req.briefingData());
 
         Client client = clientRepository.findByIdAndWorkspaceId(req.clientId(), workspaceId)
@@ -297,6 +304,57 @@ public class JobServiceImpl implements JobService {
         JobFile file = jobFileRepository.findByIdAndJobId(fileId, job.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Arquivo não encontrado"));
         return fileStorageService.load("/uploads/jobs/" + job.getId() + "/" + file.getStoredFilename());
+    }
+
+    @Override
+    @Transactional
+    public JobStatusResponseDTO updateJobStatus(Long workspaceId, Long userId, Long jobId, UpdateJobStatusDTO dto) {
+        Member caller = memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Membro nao encontrado"));
+
+        Job job = jobRepository.findByIdAndWorkspaceId(jobId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job nao encontrado"));
+
+        // Permission: CREATIVE can only move their own assigned jobs
+        if (caller.getRole() == MemberRole.CREATIVE) {
+            if (job.getAssignedCreative() == null || !job.getAssignedCreative().getId().equals(caller.getId())) {
+                throw new ForbiddenException("Criativos so podem mover jobs atribuidos a eles");
+            }
+        }
+
+        JobStatus previousStatus = job.getStatus();
+        JobStatus newStatus = dto.status();
+
+        // Forward skip detection
+        boolean skippedSteps = newStatus.ordinal() > previousStatus.ordinal() + 1;
+
+        if (skippedSteps && !dto.confirm()) {
+            return new JobStatusResponseDTO(
+                    job.getId(),
+                    job.getCode(),
+                    previousStatus,
+                    newStatus,
+                    true,
+                    false
+            );
+        }
+
+        // Apply the status change
+        job.setStatus(newStatus);
+        jobRepository.save(job);
+
+        // Emit SSE event
+        JobStatusEvent event = new JobStatusEvent(job.getId(), previousStatus, newStatus);
+        jobSseService.publish(job.getClient().getId(), event);
+
+        return new JobStatusResponseDTO(
+                job.getId(),
+                job.getCode(),
+                previousStatus,
+                newStatus,
+                skippedSteps,
+                true
+        );
     }
 
     private void validateAssignedCreative(Member assignedCreative, Long clientId) {
