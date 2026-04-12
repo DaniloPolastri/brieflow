@@ -18,7 +18,7 @@
 
 ### Backend (B1–B8)
 
-- [ ] Task B1: DTOs (UpdateJobStatusDTO, JobStatusResponseDTO, JobStatusEvent)
+- [x] Task B1: DTOs (UpdateJobStatusDTO, JobStatusResponseDTO, JobStatusEvent)
 - [ ] Task B2: JobSseService (SSE emitter manager + @Scheduled heartbeat) ⚡ PARALLEL GROUP A
 - [ ] Task B3: @EnableScheduling + SecurityConfig changes ⚡ PARALLEL GROUP A
 - [ ] Task B4: updateJobStatus in JobService/JobServiceImpl (depends on B1)
