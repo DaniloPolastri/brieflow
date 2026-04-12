@@ -1,0 +1,48 @@
+<div class="min-h-screen flex bg-gray-50">
+  <!-- Client workspace sidebar -->
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <!-- Header: back button + client name -->
+    <div class="p-4 border-b border-gray-200">
+      <a routerLink="/clients" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-3">
+        <i class="pi pi-arrow-left text-xs"></i>
+        <span>Clientes</span>
+      </a>
+      @if (client(); as c) {
+        <div class="flex items-center gap-3">
+          @if (c.logoUrl) {
+            <img [src]="c.logoUrl" [alt]="c.name" class="w-10 h-10 rounded-lg object-cover" />
+          } @else {
+            <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold">
+              {{ c.name.charAt(0).toUpperCase() }}
+            </div>
+          }
+          <div class="min-w-0">
+            <div class="font-semibold text-gray-900 truncate">{{ c.name }}</div>
+            @if (c.company) {
+              <div class="text-xs text-gray-500 truncate">{{ c.company }}</div>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="text-sm text-gray-400">Carregando...</div>
+      }
+    </div>
+
+    <!-- Nav items -->
+    <nav class="flex-1 p-3">
+      <a
+        [routerLink]="['jobs']"
+        routerLinkActive="active-nav-item"
+        class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <i class="pi pi-briefcase"></i>
+        <span>Jobs</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main content outlet -->
+  <main class="flex-1 overflow-auto">
+    <router-outlet />
+  </main>
+</div>
