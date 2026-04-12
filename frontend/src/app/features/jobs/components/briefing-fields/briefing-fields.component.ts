@@ -4,6 +4,7 @@ import {
   input,
   effect,
   inject,
+  computed,
   DestroyRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -94,16 +95,30 @@ export class BriefingFieldsComponent {
     }
   }
 
+  readonly currentSchema = computed<BriefingFieldSchema[]>(
+    () => BRIEFING_SCHEMAS[this.type()],
+  );
+
+  readonly selectOptionsMap = computed<Record<string, { label: string; value: string }[]>>(() => {
+    const map: Record<string, { label: string; value: string }[]> = {};
+    for (const field of this.currentSchema()) {
+      if (field.type === 'select') {
+        map[field.key] = (field.options ?? []).map((o) => ({ label: o, value: o }));
+      }
+    }
+    return map;
+  });
+
   schema(): BriefingFieldSchema[] {
-    return BRIEFING_SCHEMAS[this.type()];
+    return this.currentSchema();
   }
 
   asFormArray(key: string): FormArray {
     return this.formGroup().get(key) as FormArray;
   }
 
-  selectOptions(field: BriefingFieldSchema): { label: string; value: string }[] {
-    return (field.options ?? []).map((o) => ({ label: o, value: o }));
+  optionsFor(key: string): { label: string; value: string }[] {
+    return this.selectOptionsMap()[key] ?? [];
   }
 
   isInvalid(key: string): boolean {

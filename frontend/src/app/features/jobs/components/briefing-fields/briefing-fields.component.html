@@ -48,10 +48,11 @@
           <p-select
             [inputId]="field.key"
             [formControlName]="field.key"
-            [options]="selectOptions(field)"
+            [options]="optionsFor(field.key)"
             optionLabel="label"
             optionValue="value"
             [placeholder]="'Selecione ' + field.label.toLowerCase()"
+            appendTo="body"
             styleClass="w-full"
           />
         }
