@@ -40,7 +40,7 @@
 - [x] Task F9: KanbanBoardComponent implementation — drag-drop + SSE (TDD) — depends on F2, F3, F7, **B5 backend**
 - [x] Task F10: frontend-design for JobListComponent toggle (lista/kanban + meus jobs)
 - [x] Task F11: JobListComponent modification — view toggle + kanban integration (TDD) — depends on F9
-- [ ] Task F12: Smoke test — build + all tests green — depends on B8, F11
+- [x] Task F12: Smoke test — build + all tests green — depends on B8, F11
 
 ---
 
