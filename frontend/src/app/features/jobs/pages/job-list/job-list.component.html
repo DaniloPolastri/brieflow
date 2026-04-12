@@ -40,9 +40,7 @@
         </button>
       </div>
 
-      @if (canManage) {
-        <p-button label="Novo Job" icon="pi pi-plus" (onClick)="goToNew()" />
-      }
+      <p-button label="Novo Job" icon="pi pi-plus" (onClick)="goToNew()" />
     </div>
   </div>
 
@@ -126,14 +124,12 @@
         <p class="mt-1 text-[13px] text-gray-400">
           Comece criando o primeiro job da sua agência.
         </p>
-        @if (canManage) {
-          <p-button
-            label="Novo Job"
-            icon="pi pi-plus"
-            class="mt-4"
-            (onClick)="goToNew()"
-          />
-        }
+        <p-button
+          label="Novo Job"
+          icon="pi pi-plus"
+          class="mt-4"
+          (onClick)="goToNew()"
+        />
       }
     </div>
   }

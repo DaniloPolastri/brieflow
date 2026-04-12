@@ -9,7 +9,6 @@ const routes: Routes = [
   },
   {
     path: 'new',
-    canActivate: [roleGuard('OWNER', 'MANAGER')],
     loadComponent: () =>
       import('./pages/job-create/job-create.component').then(m => m.JobCreateComponent),
   },

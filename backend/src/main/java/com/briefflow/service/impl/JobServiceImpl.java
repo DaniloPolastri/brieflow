@@ -93,7 +93,7 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional
     public JobResponseDTO createJob(Long workspaceId, Long userId, JobRequestDTO req) {
-        Member caller = requireOwnerOrManager(userId, workspaceId);
+        Member caller = requireMember(userId, workspaceId);
         briefingValidator.validate(req.type(), req.briefingData());
 
         Client client = clientRepository.findByIdAndWorkspaceId(req.clientId(), workspaceId)

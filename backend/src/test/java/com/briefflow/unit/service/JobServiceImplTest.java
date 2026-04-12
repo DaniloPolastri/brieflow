@@ -93,16 +93,24 @@ class JobServiceImplTest {
     }
 
     @Test
-    void should_throwForbidden_when_creativeTriesToCreateJob() {
+    void should_allowCreativeToCreateJob() {
         Long userId = 1L, workspaceId = 2L;
         Member creative = createMember(10L, userId, workspaceId, MemberRole.CREATIVE);
         when(memberRepository.findByUserIdAndWorkspaceId(userId, workspaceId)).thenReturn(Optional.of(creative));
+        when(clientRepository.findByIdAndWorkspaceId(100L, workspaceId)).thenReturn(Optional.of(createClient(100L, workspaceId)));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(creative.getUser()));
+        when(jobRepository.incrementAndGetJobCounter(workspaceId)).thenReturn(1L);
+        when(jobRepository.save(any(Job.class))).thenAnswer(inv -> {
+            Job j = inv.getArgument(0); j.setId(500L); return j;
+        });
+        when(jobMapper.toResponseDTO(any(Job.class))).thenReturn(mock(JobResponseDTO.class));
 
         JobRequestDTO req = new JobRequestDTO(100L, null, "T", JobType.POST_FEED, JobPriority.NORMAL, null, null,
                 Map.of("captionText", "c", "format", "1:1"));
+        JobResponseDTO dto = service.createJob(workspaceId, userId, req);
 
-        assertThrows(ForbiddenException.class, () -> service.createJob(workspaceId, userId, req));
-        verify(jobRepository, never()).save(any());
+        assertNotNull(dto);
+        verify(jobRepository).save(any(Job.class));
     }
 
     @Test
