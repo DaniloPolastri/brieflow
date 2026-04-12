@@ -1,10 +1,11 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { JobListComponent } from './job-list.component';
 import { JobApiService } from '@features/jobs/services/job-api.service';
+import { JobSseService } from '@features/jobs/services/job-sse.service';
 import { StorageService } from '@core/services/storage.service';
 import { MemberApiService } from '@features/members/services/member-api.service';
-import { ConfirmationService } from 'primeng/api';
-import { of } from 'rxjs';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { of, EMPTY } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -20,6 +21,7 @@ const mockJobs: JobListItem[] = [
     type: 'POST_FEED',
     deadline: '2026-05-01',
     priority: 'NORMAL',
+    assignedCreativeId: null,
     assignedCreativeName: null,
     status: 'NOVO',
     isOverdue: false,
@@ -32,6 +34,7 @@ const mockJobs: JobListItem[] = [
     type: 'CARROSSEL',
     deadline: '2026-04-01',
     priority: 'URGENTE',
+    assignedCreativeId: 5,
     assignedCreativeName: 'João',
     status: 'NOVO',
     isOverdue: true,
@@ -41,14 +44,19 @@ const mockJobs: JobListItem[] = [
 describe('JobListComponent', () => {
   let fixture: ComponentFixture<JobListComponent>;
   let component: JobListComponent;
-  let jobApiSpy: { list: ReturnType<typeof vi.fn>; archive: ReturnType<typeof vi.fn> };
+  let jobApiSpy: { list: ReturnType<typeof vi.fn>; archive: ReturnType<typeof vi.fn>; updateStatus: ReturnType<typeof vi.fn> };
   let memberApiSpy: { list: ReturnType<typeof vi.fn> };
-  let storageSpy: { getUser: ReturnType<typeof vi.fn> };
+  let storageSpy: { getUser: ReturnType<typeof vi.fn>; getAccessToken: ReturnType<typeof vi.fn> };
+  let sseSpy: { connect: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> };
 
   function setup(role = 'OWNER') {
+    // Clear localStorage so viewMode defaults to 'kanban'
+    localStorage.removeItem('jobViewMode');
+
     jobApiSpy = {
       list: vi.fn().mockReturnValue(of(mockJobs)),
       archive: vi.fn().mockReturnValue(of(mockJobs[0])),
+      updateStatus: vi.fn().mockReturnValue(of({ applied: true, skippedSteps: false })),
     };
     memberApiSpy = {
       list: vi.fn().mockReturnValue(of({ members: [], pendingInvites: [] })),
@@ -62,6 +70,11 @@ describe('JobListComponent', () => {
         workspaceName: 'A',
         role,
       }),
+      getAccessToken: vi.fn().mockReturnValue('test-token'),
+    };
+    sseSpy = {
+      connect: vi.fn().mockReturnValue(EMPTY),
+      disconnect: vi.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -70,7 +83,9 @@ describe('JobListComponent', () => {
         { provide: JobApiService, useValue: jobApiSpy },
         { provide: MemberApiService, useValue: memberApiSpy },
         { provide: StorageService, useValue: storageSpy },
+        { provide: JobSseService, useValue: sseSpy },
         ConfirmationService,
+        MessageService,
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
@@ -90,6 +105,7 @@ describe('JobListComponent', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    localStorage.removeItem('jobViewMode');
     TestBed.resetTestingModule();
   });
 
@@ -99,8 +115,9 @@ describe('JobListComponent', () => {
     expect(component.jobs()).toEqual(mockJobs);
   });
 
-  it('should render job codes and titles', () => {
+  it('should render job codes and titles in list view', () => {
     setup();
+    component.setViewMode('list');
     fixture.detectChanges();
     const text: string = fixture.nativeElement.textContent;
     expect(text).toContain('JOB-001');
@@ -160,14 +177,16 @@ describe('JobListComponent', () => {
   });
 
   it('should show empty state when no jobs', () => {
-    jobApiSpy = {
+    localStorage.removeItem('jobViewMode');
+    const emptyJobApi = {
       list: vi.fn().mockReturnValue(of([])),
       archive: vi.fn().mockReturnValue(of(mockJobs[0])),
+      updateStatus: vi.fn().mockReturnValue(of({ applied: true, skippedSteps: false })),
     };
-    memberApiSpy = {
+    const emptyMemberApi = {
       list: vi.fn().mockReturnValue(of({ members: [], pendingInvites: [] })),
     };
-    storageSpy = {
+    const emptyStorage = {
       getUser: vi.fn().mockReturnValue({
         id: 10,
         name: 'Ana',
@@ -176,15 +195,18 @@ describe('JobListComponent', () => {
         workspaceName: 'A',
         role: 'OWNER',
       }),
+      getAccessToken: vi.fn().mockReturnValue('test-token'),
     };
 
     TestBed.configureTestingModule({
       imports: [JobListComponent, NoopAnimationsModule],
       providers: [
-        { provide: JobApiService, useValue: jobApiSpy },
-        { provide: MemberApiService, useValue: memberApiSpy },
-        { provide: StorageService, useValue: storageSpy },
+        { provide: JobApiService, useValue: emptyJobApi },
+        { provide: MemberApiService, useValue: emptyMemberApi },
+        { provide: StorageService, useValue: emptyStorage },
+        { provide: JobSseService, useValue: { connect: vi.fn().mockReturnValue(EMPTY), disconnect: vi.fn() } },
         ConfirmationService,
+        MessageService,
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
@@ -201,5 +223,52 @@ describe('JobListComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Nenhum job');
+  });
+
+  // --- RF05 Kanban tests ---
+
+  it('should default to kanban view', () => {
+    setup();
+    expect(component.viewMode()).toBe('kanban');
+  });
+
+  it('should persist view mode in localStorage', () => {
+    setup();
+    component.setViewMode('list');
+    expect(localStorage.getItem('jobViewMode')).toBe('list');
+  });
+
+  it('should show kanban board when viewMode is kanban', () => {
+    setup();
+    component.setViewMode('kanban');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-kanban-board')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('p-table')).toBeFalsy();
+  });
+
+  it('should show table when viewMode is list', () => {
+    setup();
+    component.setViewMode('list');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-kanban-board')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('p-table')).toBeTruthy();
+  });
+
+  it('should default myJobsOnly to false for OWNER', () => {
+    setup('OWNER');
+    expect(component.myJobsOnly()).toBe(false);
+  });
+
+  it('should default myJobsOnly to true for CREATIVE', () => {
+    setup('CREATIVE');
+    expect(component.myJobsOnly()).toBe(true);
+  });
+
+  it('should filter jobs when myJobsOnly is true', () => {
+    setup('OWNER');
+    component.myJobsOnly.set(true);
+    // Only jobs assigned to user id=10 should pass
+    const filtered = component.filteredJobs();
+    expect(filtered.length).toBe(0); // no jobs are assigned to id=10
   });
 });

@@ -8,9 +8,42 @@
         <span class="ml-1 text-gray-400">({{ jobs().length }})</span>
       </p>
     </div>
-    @if (canManage) {
-      <p-button label="Novo Job" icon="pi pi-plus" (onClick)="goToNew()" />
-    }
+    <div class="flex items-center gap-3">
+      <!-- Meus Jobs toggle -->
+      <label class="flex items-center gap-2 text-[13px] text-gray-600">
+        <p-toggleswitch
+          [ngModel]="myJobsOnly()"
+          (ngModelChange)="myJobsOnly.set($event)"
+        />
+        Meus Jobs
+      </label>
+
+      <!-- View toggle buttons -->
+      <div class="flex overflow-hidden rounded-lg border border-gray-200">
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center transition-colors"
+          [class]="viewMode() === 'kanban' ? 'bg-indigo-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+          (click)="setViewMode('kanban')"
+          title="Kanban"
+        >
+          <i class="pi pi-th-large text-[13px]"></i>
+        </button>
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center border-l border-gray-200 transition-colors"
+          [class]="viewMode() === 'list' ? 'bg-indigo-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'"
+          (click)="setViewMode('list')"
+          title="Lista"
+        >
+          <i class="pi pi-list text-[13px]"></i>
+        </button>
+      </div>
+
+      @if (canManage) {
+        <p-button label="Novo Job" icon="pi pi-plus" (onClick)="goToNew()" />
+      }
+    </div>
   </div>
 
   <!-- Filters -->
@@ -105,8 +138,20 @@
     </div>
   }
 
-  <!-- Table -->
-  @if (!loading() && jobs().length > 0) {
+  <!-- Kanban View -->
+  @if (!loading() && filteredJobs().length > 0 && viewMode() === 'kanban') {
+    <app-kanban-board
+      [clientId]="clientId ?? 0"
+      [jobs]="filteredJobs()"
+      [currentUserId]="currentUser?.id ?? null"
+      [canManage]="canManage"
+      (jobClicked)="goToDetail($event)"
+      (statusChanged)="loadJobs()"
+    />
+  }
+
+  <!-- Table View -->
+  @if (!loading() && jobs().length > 0 && viewMode() === 'list') {
     <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
       <p-table
         [value]="jobs()"
