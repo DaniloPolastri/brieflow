@@ -83,19 +83,26 @@ export class JobDetailComponent implements OnInit {
   private readonly confirmService = inject(ConfirmationService);
 
   readonly job = signal<Job | null>(null);
+  readonly clientId = signal<number>(0);
   jobId = 0;
   readonly currentUser = this.storage.getUser();
   readonly canManage =
     this.currentUser?.role === 'OWNER' || this.currentUser?.role === 'MANAGER';
 
   ngOnInit(): void {
-    this.jobId = Number(this.route.snapshot.params['id']);
+    const pm = this.route.snapshot.paramMap;
+    this.jobId = Number(pm.get('id') ?? this.route.snapshot.params['id']);
+    const cid = Number(pm.get('clientId'));
+    if (cid && !Number.isNaN(cid)) this.clientId.set(cid);
     this.loadJob();
   }
 
   private loadJob(): void {
     this.api.getById(this.jobId).subscribe({
-      next: (job) => this.job.set(job),
+      next: (job) => {
+        this.job.set(job);
+        if (this.clientId() === 0) this.clientId.set(job.client.id);
+      },
       error: (err) => {
         console.error('Erro ao carregar job:', err);
         this.msg.add({
@@ -103,7 +110,9 @@ export class JobDetailComponent implements OnInit {
           summary: 'Erro',
           detail: 'Job não encontrado.',
         });
-        this.router.navigate(['/jobs']);
+        const cid = this.clientId();
+        if (cid) this.router.navigate(['/clients', cid, 'jobs']);
+        else this.router.navigate(['/clients']);
       },
     });
   }
@@ -126,7 +135,7 @@ export class JobDetailComponent implements OnInit {
   }
 
   goToEdit(): void {
-    this.router.navigate(['/jobs', this.jobId, 'edit']);
+    this.router.navigate(['/clients', this.clientId(), 'jobs', this.jobId, 'edit']);
   }
 
   archive(): void {

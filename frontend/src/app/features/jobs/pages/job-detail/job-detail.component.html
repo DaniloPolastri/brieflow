@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="mb-6">
       <div class="mb-2 flex items-center gap-1 text-[12px] text-gray-500">
-        <a routerLink="/jobs" class="hover:text-indigo-600">Jobs</a>
+        <a [routerLink]="['/clients', clientId(), 'jobs']" class="hover:text-indigo-600">Jobs</a>
         <span>/</span>
         <span class="text-gray-600">{{ j.code }}</span>
       </div>

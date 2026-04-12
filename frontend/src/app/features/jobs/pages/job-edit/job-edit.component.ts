@@ -39,16 +39,22 @@ export class JobEditComponent implements OnInit {
   readonly job = signal<Job | null>(null);
   readonly existingFiles = signal<JobFile[]>([]);
   readonly loading = signal(false);
+  readonly clientId = signal<number>(0);
   jobId = 0;
 
   readonly formGroup = computed(() => this.jobForm()?.form ?? null);
 
   ngOnInit(): void {
-    this.jobId = Number(this.route.snapshot.params['id']);
+    const pm = this.route.snapshot.paramMap;
+    this.jobId = Number(pm.get('id') ?? this.route.snapshot.params['id']);
+    const cid = Number(pm.get('clientId'));
+    if (cid && !Number.isNaN(cid)) this.clientId.set(cid);
+
     this.jobApi.getById(this.jobId).subscribe({
       next: (job) => {
         this.job.set(job);
         this.existingFiles.set(job.files);
+        if (this.clientId() === 0) this.clientId.set(job.client.id);
       },
       error: (err) => {
         console.error('Erro ao carregar job:', err);
@@ -57,7 +63,7 @@ export class JobEditComponent implements OnInit {
           summary: 'Erro',
           detail: 'Job não encontrado.',
         });
-        this.router.navigate(['/jobs']);
+        this.router.navigate(['/clients']);
       },
     });
   }
@@ -72,7 +78,7 @@ export class JobEditComponent implements OnInit {
           summary: 'Job atualizado',
           detail: '',
         });
-        this.router.navigate(['/jobs', this.jobId]);
+        this.router.navigate(['/clients', this.clientId(), 'jobs', this.jobId]);
       },
       error: (err) => {
         this.loading.set(false);
@@ -96,6 +102,6 @@ export class JobEditComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/jobs', this.jobId]);
+    this.router.navigate(['/clients', this.clientId(), 'jobs', this.jobId]);
   }
 }

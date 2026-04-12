@@ -63,6 +63,7 @@ export class JobFormComponent {
   private readonly memberApi = inject(MemberApiService);
 
   readonly mode = input.required<'create' | 'edit'>();
+  readonly clientId = input.required<number>();
   readonly initialJob = input<Job | null>(null);
   readonly jobId = input<number | null>(null);
   readonly existingFiles = input<JobFile[]>([]);
@@ -72,7 +73,6 @@ export class JobFormComponent {
   readonly fileUploaded = output<JobFile>();
   readonly fileDeleted = output<number>();
 
-  readonly clientOptions = signal<{ label: string; value: number }[]>([]);
   readonly creativeOptions = signal<{ label: string; value: number }[]>([]);
 
   readonly typeOptions = [
@@ -93,7 +93,6 @@ export class JobFormComponent {
 
   readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(255)]],
-    clientId: this.fb.control<number | null>(null, [Validators.required]),
     type: this.fb.nonNullable.control<JobType>('POST_FEED', [
       Validators.required,
     ]),
@@ -109,21 +108,14 @@ export class JobFormComponent {
   readonly currentType = signal<JobType>('POST_FEED');
 
   constructor() {
-    this.clientApi.list({ active: true }).subscribe({
-      next: (clients) =>
-        this.clientOptions.set(
-          clients.map((c) => ({ label: c.name, value: c.id })),
-        ),
-      error: (err) => console.error('Erro ao carregar clientes:', err),
-    });
-
-    this.form.get('clientId')!.valueChanges.subscribe((clientId) => {
-      if (clientId !== null) this.loadCreativesForClient(clientId);
-      else this.creativeOptions.set([]);
-    });
-
     this.form.get('type')!.valueChanges.subscribe((t) => {
       if (t) this.currentType.set(t);
+    });
+
+    effect(() => {
+      const cid = this.clientId();
+      if (cid) this.loadCreativesForClient(cid);
+      else this.creativeOptions.set([]);
     });
 
     effect(() => {
@@ -131,7 +123,6 @@ export class JobFormComponent {
       if (job && this.mode() === 'edit') {
         this.form.patchValue({
           title: job.title,
-          clientId: job.client.id,
           type: job.type,
           description: job.description ?? '',
           deadline: job.deadline ? new Date(job.deadline) : null,
@@ -173,7 +164,7 @@ export class JobFormComponent {
     const raw = this.form.getRawValue();
     const request: JobRequest = {
       title: raw.title,
-      clientId: raw.clientId!,
+      clientId: this.clientId(),
       type: raw.type,
       priority: raw.priority,
       briefingData: raw.briefingData as Record<string, unknown>,

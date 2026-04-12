@@ -5,8 +5,9 @@ import {
   signal,
   viewChild,
   computed,
+  OnInit,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { JobApiService } from '@features/jobs/services/job-api.service';
@@ -27,17 +28,29 @@ import type { JobRequest } from '@features/jobs/models/job.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageService],
 })
-export class JobCreateComponent {
+export class JobCreateComponent implements OnInit {
   private readonly jobApi = inject(JobApiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly msg = inject(MessageService);
 
   readonly jobForm = viewChild(JobFormComponent);
 
   readonly loading = signal(false);
   readonly stagedFiles = signal<File[]>([]);
+  readonly clientId = signal<number>(0);
 
   readonly formGroup = computed(() => this.jobForm()?.form ?? null);
+
+  ngOnInit(): void {
+    const cid = Number(this.route.snapshot.paramMap.get('clientId'));
+    if (!cid || Number.isNaN(cid)) {
+      console.error('clientId ausente na rota de criação de job');
+      this.router.navigate(['/clients']);
+      return;
+    }
+    this.clientId.set(cid);
+  }
 
   onFormSubmit(request: JobRequest): void {
     this.loading.set(true);
@@ -50,7 +63,7 @@ export class JobCreateComponent {
           detail: job.code,
         });
         this.uploadStagedFiles(job.id);
-        this.router.navigate(['/jobs', job.id]);
+        this.router.navigate(['/clients', this.clientId(), 'jobs', job.id]);
       },
       error: (err) => {
         this.loading.set(false);
@@ -80,6 +93,6 @@ export class JobCreateComponent {
   }
 
   onCancel(): void {
-    this.router.navigate(['/jobs']);
+    this.router.navigate(['/clients', this.clientId(), 'jobs']);
   }
 }

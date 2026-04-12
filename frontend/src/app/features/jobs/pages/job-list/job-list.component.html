@@ -28,17 +28,6 @@
 
     <div class="flex flex-wrap items-center gap-3">
       <p-select
-        [options]="clientOptions()"
-        [ngModel]="clientFilter()"
-        (ngModelChange)="clientFilter.set($event)"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Cliente"
-        [showClear]="true"
-        styleClass="min-w-[180px]"
-        (onChange)="onFilterChange()"
-      />
-      <p-select
         [options]="typeOptions"
         [ngModel]="typeFilter()"
         (ngModelChange)="typeFilter.set($event)"
@@ -131,7 +120,6 @@
           <tr>
             <th class="w-[120px]">Código</th>
             <th>Título</th>
-            <th class="w-[200px]">Cliente</th>
             <th class="w-[120px]">Tipo</th>
             <th class="w-[180px]">Criativo</th>
             <th class="w-[140px]">Prazo</th>
@@ -149,17 +137,6 @@
               <span class="block max-w-[320px] truncate text-[14px] text-gray-900">
                 {{ job.title }}
               </span>
-            </td>
-            <td>
-              <div class="flex items-center gap-2">
-                <div
-                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-medium"
-                  [class]="getAvatarColor(job.clientName)"
-                >
-                  {{ getInitials(job.clientName) }}
-                </div>
-                <span class="truncate text-[13px] text-gray-700">{{ job.clientName }}</span>
-              </div>
             </td>
             <td>
               <p-tag

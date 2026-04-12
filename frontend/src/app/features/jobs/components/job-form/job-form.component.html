@@ -22,25 +22,6 @@
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label for="clientId" class="text-[13px] font-medium text-gray-700">
-          Cliente <span class="ml-0.5 text-red-500">*</span>
-        </label>
-        <p-select
-          inputId="clientId"
-          formControlName="clientId"
-          [options]="clientOptions()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Selecione um cliente"
-          [filter]="true"
-          styleClass="w-full"
-        />
-        @if (form.get('clientId')?.invalid && form.get('clientId')?.touched) {
-          <span class="text-[12px] text-red-600">Selecione um cliente.</span>
-        }
-      </div>
-
-      <div class="flex flex-col gap-1.5">
         <label for="type" class="text-[13px] font-medium text-gray-700">
           Tipo <span class="ml-0.5 text-red-500">*</span>
         </label>
@@ -100,7 +81,7 @@
           [filter]="true"
           styleClass="w-full"
         />
-        @if (creativeOptions().length === 0 && form.get('clientId')?.value) {
+        @if (creativeOptions().length === 0) {
           <span class="text-[12px] text-gray-400">
             Nenhum criativo atribuído a este cliente.
           </span>

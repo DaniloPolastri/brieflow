@@ -62,6 +62,7 @@ describe('JobFormComponent', () => {
     fixture = TestBed.createComponent(JobFormComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('mode', 'create');
+    fixture.componentRef.setInput('clientId', 1);
     fixture.componentRef.setInput('initialJob', null);
     fixture.detectChanges();
   });
@@ -71,12 +72,16 @@ describe('JobFormComponent', () => {
     expect(component.form.get('type')!.value).toBe('POST_FEED');
   });
 
+  it('should not expose a clientId form control', () => {
+    expect(component.form.get('clientId')).toBeNull();
+  });
+
   it('should be invalid when required fields are empty', () => {
     expect(component.form.valid).toBe(false);
   });
 
   it('should be valid with required fields filled', () => {
-    component.form.patchValue({ title: 'Post', clientId: 1 });
+    component.form.patchValue({ title: 'Post' });
     (component.form.get('briefingData') as any).patchValue({
       captionText: 'abc',
       format: '1:1',
@@ -84,27 +89,27 @@ describe('JobFormComponent', () => {
     expect(component.form.valid).toBe(true);
   });
 
-  it('should reload creatives when client changes', () => {
-    component.form.get('clientId')!.setValue(1);
+  it('should load creatives when clientId input is set', () => {
     expect(clientApiSpy.getAssignedMembers).toHaveBeenCalledWith(1);
   });
 
   it('should filter creative options to CREATIVE role only', () => {
-    component.form.get('clientId')!.setValue(1);
     fixture.detectChanges();
     expect(component.creativeOptions().map((o) => o.value)).toEqual([10]);
   });
 
-  it('should emit submit when onSubmit called with valid form', () => {
+  it('should emit submit with clientId from input when onSubmit called with valid form', () => {
     const spy = vi.fn();
     component.submitted.subscribe(spy);
-    component.form.patchValue({ title: 'Post', clientId: 1 });
+    component.form.patchValue({ title: 'Post' });
     (component.form.get('briefingData') as any).patchValue({
       captionText: 'abc',
       format: '1:1',
     });
     component.onSubmit();
-    expect(spy).toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: 1, title: 'Post' }),
+    );
   });
 
   it('should populate form from initialJob in edit mode', async () => {

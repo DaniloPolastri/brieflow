@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="mb-6">
       <div class="mb-1 flex items-center gap-1 text-[12px] text-gray-500">
-        <a routerLink="/jobs" class="hover:text-indigo-600">Jobs</a>
+        <a [routerLink]="['/clients', clientId(), 'jobs']" class="hover:text-indigo-600">Jobs</a>
         <span>/</span>
-        <a [routerLink]="['/jobs', j.id]" class="hover:text-indigo-600">
+        <a [routerLink]="['/clients', clientId(), 'jobs', j.id]" class="hover:text-indigo-600">
           {{ j.code }}
         </a>
         <span>/</span>
@@ -27,6 +27,7 @@
       <main>
         <app-job-form
           mode="edit"
+          [clientId]="clientId()"
           [initialJob]="j"
           [jobId]="j.id"
           [existingFiles]="existingFiles()"

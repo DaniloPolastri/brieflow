@@ -6,9 +6,9 @@ import {
   OnInit,
   OnDestroy,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil, forkJoin, of } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil, of } from 'rxjs';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -21,7 +21,6 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { JobApiService } from '@features/jobs/services/job-api.service';
-import { ClientApiService } from '@features/clients/services/client-api.service';
 import { MemberApiService } from '@features/members/services/member-api.service';
 import { StorageService } from '@core/services/storage.service';
 import type {
@@ -81,23 +80,23 @@ const PRIORITY_LABELS: Record<JobPriority, string> = {
 })
 export class JobListComponent implements OnInit, OnDestroy {
   private readonly jobApi = inject(JobApiService);
-  private readonly clientApi = inject(ClientApiService);
   private readonly memberApi = inject(MemberApiService);
   private readonly storage = inject(StorageService);
   private readonly confirmService = inject(ConfirmationService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly jobs = signal<JobListItem[]>([]);
   readonly loading = signal(true);
   readonly searchTerm = signal('');
   readonly showArchived = signal(false);
-  readonly clientFilter = signal<number | null>(null);
   readonly typeFilter = signal<JobType | null>(null);
   readonly priorityFilter = signal<JobPriority | null>(null);
   readonly creativeFilter = signal<number | null>(null);
 
-  readonly clientOptions = signal<{ label: string; value: number }[]>([]);
   readonly creativeOptions = signal<{ label: string; value: number }[]>([]);
+
+  private clientId: number | null = null;
 
   readonly typeOptions = [
     { label: 'Post Feed', value: 'POST_FEED' as JobType },
@@ -124,6 +123,9 @@ export class JobListComponent implements OnInit, OnDestroy {
     this.currentUser?.role === 'OWNER' || this.currentUser?.role === 'MANAGER';
 
   ngOnInit(): void {
+    const clientIdParam = this.route.snapshot.paramMap.get('clientId');
+    this.clientId = clientIdParam ? Number(clientIdParam) : null;
+
     this.searchSubject
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe((term) => {
@@ -143,10 +145,9 @@ export class JobListComponent implements OnInit, OnDestroy {
   loadJobs(): void {
     this.loading.set(true);
     const filters: JobListFilters = { archived: this.showArchived() };
+    if (this.clientId !== null) filters.clientId = this.clientId;
     const s = this.searchTerm();
     if (s) filters.search = s;
-    const c = this.clientFilter();
-    if (c !== null) filters.clientId = c;
     const t = this.typeFilter();
     if (t) filters.type = t;
     const p = this.priorityFilter();
@@ -167,18 +168,13 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   private loadFilterOptions(): void {
-    forkJoin({
-      clients: this.clientApi.list({ active: true }),
-      members: this.canManage
-        ? this.memberApi.list()
-        : of({ members: [], pendingInvites: [] }),
-    }).subscribe({
-      next: ({ clients, members }) => {
-        this.clientOptions.set(
-          clients.map((c) => ({ label: c.name, value: c.id })),
-        );
+    const members$ = this.canManage
+      ? this.memberApi.list()
+      : of({ members: [], pendingInvites: [] });
+    members$.subscribe({
+      next: ({ members }) => {
         this.creativeOptions.set(
-          members.members
+          members
             .filter((m) => m.role === 'CREATIVE')
             .map((m) => ({ label: m.userName, value: m.id })),
         );
@@ -199,15 +195,27 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   goToNew(): void {
-    this.router.navigate(['/jobs/new']);
+    if (this.clientId !== null) {
+      this.router.navigate(['/clients', this.clientId, 'jobs', 'new']);
+    } else {
+      this.router.navigate(['new'], { relativeTo: this.route });
+    }
   }
 
   goToDetail(job: JobListItem): void {
-    this.router.navigate(['/jobs', job.id]);
+    if (this.clientId !== null) {
+      this.router.navigate(['/clients', this.clientId, 'jobs', job.id]);
+    } else {
+      this.router.navigate([job.id], { relativeTo: this.route });
+    }
   }
 
   goToEdit(job: JobListItem): void {
-    this.router.navigate(['/jobs', job.id, 'edit']);
+    if (this.clientId !== null) {
+      this.router.navigate(['/clients', this.clientId, 'jobs', job.id, 'edit']);
+    } else {
+      this.router.navigate([job.id, 'edit'], { relativeTo: this.route });
+    }
   }
 
   archiveJob(job: JobListItem): void {

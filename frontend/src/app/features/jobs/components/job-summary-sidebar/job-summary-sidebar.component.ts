@@ -10,7 +10,6 @@ import type { JobPriority, JobType } from '@features/jobs/models/job.model';
 
 const REQUIRED_LABELS: Record<string, string> = {
   title: 'Título',
-  clientId: 'Cliente',
   type: 'Tipo',
   priority: 'Prioridade',
 };
