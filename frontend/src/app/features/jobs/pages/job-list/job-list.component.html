@@ -107,7 +107,7 @@
 
   <!-- Table -->
   @if (!loading() && jobs().length > 0) {
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xs">
+    <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
       <p-table
         [value]="jobs()"
         [paginator]="true"
@@ -192,7 +192,12 @@
                 size="small"
                 (onClick)="menu.toggle($event)"
               />
-              <p-menu #menu [popup]="true" [model]="getMenuItems(job)" />
+              <p-menu
+                #menu
+                [popup]="true"
+                [model]="getMenuItems(job)"
+                appendTo="body"
+              />
             </td>
           </tr>
         </ng-template>
