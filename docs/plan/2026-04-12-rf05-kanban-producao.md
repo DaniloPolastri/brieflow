@@ -23,7 +23,7 @@
 - [x] Task B3: @EnableScheduling + SecurityConfig changes ⚡ PARALLEL GROUP A
 - [x] Task B4: updateJobStatus in JobService/JobServiceImpl (depends on B1)
 - [x] Task B5: PATCH endpoint in JobController (depends on B4)
-- [ ] Task B6: JobSseController — SSE stream endpoint (depends on B2, B3)
+- [x] Task B6: JobSseController — SSE stream endpoint (depends on B2, B3)
 - [ ] Task B7: Unit tests — JobServiceImplTest + JobSseServiceTest (depends on B4, B2)
 - [ ] Task B8: Integration tests — JobControllerTest + JobSseControllerTest (depends on B5, B6)
 
