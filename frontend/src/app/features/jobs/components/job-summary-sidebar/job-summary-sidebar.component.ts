@@ -1,11 +1,15 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
+  effect,
+  inject,
   input,
   output,
 } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { merge } from 'rxjs';
 import type { JobPriority, JobType } from '@features/jobs/models/job.model';
 
 const REQUIRED_LABELS: Record<string, string> = {
@@ -47,6 +51,22 @@ export class JobSummarySidebarComponent {
 
   readonly save = output<void>();
   readonly cancel = output<void>();
+
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    // FormGroup reference is stable, so OnPush never re-renders when its
+    // inner values change. Subscribe to valueChanges/statusChanges of the
+    // current form and trigger markForCheck so the template getters re-run
+    // against fresh state.
+    effect((onCleanup) => {
+      const f = this.form();
+      const sub = merge(f.valueChanges, f.statusChanges).subscribe(() =>
+        this.cdr.markForCheck(),
+      );
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
 
   canSave(): boolean {
     return this.form().valid && !this.loading();
