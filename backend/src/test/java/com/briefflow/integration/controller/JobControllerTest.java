@@ -296,6 +296,47 @@ class JobControllerTest {
                 .andExpect(status().isUnprocessableEntity());
     }
 
+    // ---------- RF05: PATCH /status tests ----------
+
+    @Test
+    void should_patchStatus_200() throws Exception {
+        MvcResult create = createJob("Status test job");
+        Long jobId = extractId(create);
+
+        String body = """
+            {"status": "EM_CRIACAO", "confirm": false}
+            """;
+
+        mockMvc.perform(patch("/api/v1/jobs/" + jobId + "/status")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applied").value(true))
+                .andExpect(jsonPath("$.newStatus").value("EM_CRIACAO"))
+                .andExpect(jsonPath("$.previousStatus").value("NOVO"))
+                .andExpect(jsonPath("$.skippedSteps").value(false));
+    }
+
+    @Test
+    void should_patchStatus_return_skippedSteps() throws Exception {
+        MvcResult create = createJob("Skip test job");
+        Long jobId = extractId(create);
+
+        // Job is NOVO, move to REVISAO_INTERNA (skip EM_CRIACAO)
+        String body = """
+            {"status": "REVISAO_INTERNA", "confirm": false}
+            """;
+
+        mockMvc.perform(patch("/api/v1/jobs/" + jobId + "/status")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.skippedSteps").value(true))
+                .andExpect(jsonPath("$.applied").value(false));
+    }
+
     // ---------- helpers ----------
 
     private MvcResult createJob(String title) throws Exception {
