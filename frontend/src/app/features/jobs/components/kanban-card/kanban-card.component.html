@@ -1,0 +1,58 @@
+<div
+  data-testid="kanban-card"
+  class="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-xs transition-shadow hover:shadow-sm"
+  [class.opacity-50]="disabled()"
+  (click)="onClick()"
+>
+  <!-- Header: code + priority -->
+  <div class="mb-1.5 flex items-center justify-between">
+    <span
+      data-testid="job-code"
+      class="font-mono text-[11px] text-gray-400"
+    >{{ job().code }}</span>
+    <span
+      data-testid="priority-badge"
+      class="rounded px-1.5 py-0.5 text-[10px] font-medium"
+      [class]="priorityConfig().class"
+    >{{ priorityConfig().label }}</span>
+  </div>
+
+  <!-- Title -->
+  <p
+    data-testid="job-title"
+    class="mb-2 line-clamp-2 text-[13px] font-medium leading-tight text-gray-900"
+  >{{ job().title }}</p>
+
+  <!-- Type badge -->
+  <div class="mb-2">
+    <span
+      data-testid="type-badge"
+      class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600"
+    >{{ typeLabel() }}</span>
+  </div>
+
+  <!-- Footer: deadline + avatar -->
+  <div class="flex items-center justify-between">
+    @if (formattedDeadline()) {
+      <span
+        data-testid="deadline"
+        class="flex items-center gap-1 text-[11px]"
+        [class.text-red-500]="job().isOverdue"
+        [class.text-gray-500]="!job().isOverdue"
+      >
+        <i class="pi pi-calendar text-[10px]"></i>
+        {{ formattedDeadline() }}
+      </span>
+    } @else {
+      <span></span>
+    }
+
+    @if (job().assignedCreativeName) {
+      <div
+        data-testid="creative-avatar"
+        class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-[9px] font-semibold text-indigo-700"
+        [title]="job().assignedCreativeName ?? ''"
+      >{{ initials() }}</div>
+    }
+  </div>
+</div>
