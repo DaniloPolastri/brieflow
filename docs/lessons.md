@@ -13,7 +13,14 @@
 - **Regra:** Antes de executar qualquer task de migration SQL, o executor DEVE fazer um diff manual entre a seção "Migration" do plano e a seção "Migration" da spec. Nomes de coluna, tipos, constraints, defaults, indexes — comparar item a item. Se divergir, parar, reportar ao usuário, e fixar plano OU spec antes de commitar o SQL
 - **Contexto:** Toda task `V*__*.sql` gerada por um plano
 
-## [Angular] — Sempre invocar frontend-design antes de implementar UI (ERRO REINCIDENTE)
+## [PrimeNG] — Nunca passar arrays recém-criados para `[options]` de p-select/p-multiselect/p-dropdown
+- **Erro:** No `BriefingFieldsComponent` do RF04, o template fazia `[options]="selectOptions(field)"` onde `selectOptions()` era um método que chamava `.map(...)` a cada invocação, retornando um NOVO array a cada change detection cycle. Resultado: o `p-select` ficava impossível de selecionar — clicar no dropdown não abria o painel (ou abria e fechava imediatamente) porque o componente PrimeNG reseta seu estado interno toda vez que detecta mudança de identidade em `options`
+- **Regra:** Dropdowns do PrimeNG (p-select, p-multiselect, p-dropdown, p-listbox) DEVEM receber arrays com **referência estável** entre change detection cycles. Usar um de:
+  - `computed()` que cacheia o array mapeado (quando dependente de signal input)
+  - Propriedade `readonly` da classe inicializada no construtor
+  - `BehaviorSubject` + `async` pipe
+  - NUNCA método no template que retorna `.map()` ou `.filter()` direto
+- **Contexto:** Todo uso de dropdown do PrimeNG com lista de options derivada. Adicionar `appendTo="body"` também é boa prática para evitar clipping (já era conhecido por outra lição)
 
 ## [Domain] — Soft-delete é coluna booleana dedicada, não valor de enum de status
 - **Erro:** No plano do RF04, `JobStatus.ARCHIVED` foi usado como mecanismo de soft-delete, substituindo a coluna `archived BOOLEAN` que a spec definia. Isso criava duas fontes da verdade e ambiguidade: um job `APROVADO` + `archived=true` ficava inconsistente
