@@ -29,7 +29,7 @@
 
 ### Frontend (F1–F12)
 
-- [ ] Task F1: Install @angular/cdk + add RF05 types to job.model.ts
+- [x] Task F1: Install @angular/cdk + add RF05 types to job.model.ts
 - [ ] Task F2: JobSseService — EventSource wrapper with Observable ⚡ PARALLEL GROUP B
 - [ ] Task F3: JobApiService.updateStatus() method ⚡ PARALLEL GROUP B
 - [ ] Task F4: frontend-design for KanbanCardComponent

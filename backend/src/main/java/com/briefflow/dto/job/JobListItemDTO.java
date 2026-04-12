@@ -12,6 +12,7 @@ public record JobListItemDTO(
     JobType type,
     String deadline,
     JobPriority priority,
+    Long assignedCreativeId,
     String assignedCreativeName,
     JobStatus status,
     Boolean isOverdue
