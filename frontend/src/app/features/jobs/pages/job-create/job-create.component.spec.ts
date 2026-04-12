@@ -3,7 +3,7 @@ import { JobCreateComponent } from './job-create.component';
 import { JobApiService } from '@features/jobs/services/job-api.service';
 import { ClientApiService } from '@features/clients/services/client-api.service';
 import { MemberApiService } from '@features/members/services/member-api.service';
-import { Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -62,6 +62,12 @@ describe('JobCreateComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: convertToParamMap({ clientId: '1' }) },
+          },
+        },
       ],
     });
     fixture = TestBed.createComponent(JobCreateComponent);
@@ -71,7 +77,7 @@ describe('JobCreateComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should navigate to detail after successful create', () => {
+  it('should navigate to detail under client workspace after successful create', () => {
     const req: JobRequest = {
       title: 'X',
       clientId: 1,
@@ -81,7 +87,7 @@ describe('JobCreateComponent', () => {
     };
     component.onFormSubmit(req);
     expect(jobApi.create).toHaveBeenCalledWith(req);
-    expect(navigateSpy).toHaveBeenCalledWith(['/jobs', 42]);
+    expect(navigateSpy).toHaveBeenCalledWith(['/clients', 1, 'jobs', 42]);
   });
 
   it('should show error toast on failed create', () => {

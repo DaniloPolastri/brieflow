@@ -25,7 +25,6 @@ describe('JobSummarySidebarComponent', () => {
     fb = TestBed.inject(FormBuilder);
     form = fb.nonNullable.group({
       title: ['', [Validators.required]],
-      clientId: [null as number | null, [Validators.required]],
       type: ['POST_FEED', [Validators.required]],
       priority: ['NORMAL', [Validators.required]],
       deadline: [''],
@@ -56,7 +55,7 @@ describe('JobSummarySidebarComponent', () => {
   });
 
   it('should enable save button when form is valid', () => {
-    form.patchValue({ title: 'Post', clientId: 1 });
+    form.patchValue({ title: 'Post' });
     fixture.detectChanges();
     expect(component.canSave()).toBe(true);
   });
@@ -64,7 +63,7 @@ describe('JobSummarySidebarComponent', () => {
   it('should emit save when save button triggers', () => {
     const spy = vi.fn();
     component.save.subscribe(spy);
-    form.patchValue({ title: 'Post', clientId: 1 });
+    form.patchValue({ title: 'Post' });
     fixture.detectChanges();
     component.onSave();
     expect(spy).toHaveBeenCalled();
@@ -73,6 +72,5 @@ describe('JobSummarySidebarComponent', () => {
   it('should list missing required fields', () => {
     const missing = component.missingRequiredFields();
     expect(missing).toContain('Título');
-    expect(missing).toContain('Cliente');
   });
 });

@@ -5221,3 +5221,7 @@ git commit -m "fix(frontend): smoke test adjustments for RF04"
 Code review identified 5 critical and 4 important issues. All fixed in commits `fix(jobs):*` above.
 Key lessons added to `docs/lessons.md`: [API] contract verification, [API] query param testing, [Plan] polymorphic validator happy-path coverage.
 
+## Client-Scoped Navigation Refactor (2026-04-11)
+
+Strategic navigation restructure (no backend changes, no new features). Jobs moved from top-level route to nested under `/clients/:clientId/jobs`. New `ClientWorkspaceLayoutComponent` provides immersive client workspace (sidebar swap). Job list/form/detail auto-read clientId from route parent; client dropdown and column removed from UI.
+

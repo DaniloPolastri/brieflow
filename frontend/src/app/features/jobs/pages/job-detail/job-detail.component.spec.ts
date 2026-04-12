@@ -1,7 +1,7 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { JobDetailComponent } from './job-detail.component';
 import { JobApiService } from '@features/jobs/services/job-api.service';
-import { ActivatedRoute, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { StorageService } from '@core/services/storage.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -75,7 +75,12 @@ describe('JobDetailComponent', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { params: { id: '42' } } },
+          useValue: {
+            snapshot: {
+              params: { id: '42' },
+              paramMap: convertToParamMap({ id: '42', clientId: '1' }),
+            },
+          },
         },
       ],
     });
@@ -131,7 +136,7 @@ describe('JobDetailComponent', () => {
     expect(api.archive).toHaveBeenCalledWith(42, true);
   });
 
-  it('should navigate to list when job not found', () => {
+  it('should navigate to client jobs list when job not found', () => {
     api = {
       getById: vi.fn().mockReturnValue(throwError(() => ({ status: 404 }))),
       archive: vi.fn(),
@@ -161,7 +166,12 @@ describe('JobDetailComponent', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { params: { id: '42' } } },
+          useValue: {
+            snapshot: {
+              params: { id: '42' },
+              paramMap: convertToParamMap({ id: '42', clientId: '1' }),
+            },
+          },
         },
       ],
     });
@@ -170,6 +180,6 @@ describe('JobDetailComponent', () => {
     const router = TestBed.inject(Router);
     const spy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
-    expect(spy).toHaveBeenCalledWith(['/jobs']);
+    expect(spy).toHaveBeenCalledWith(['/clients', 1, 'jobs']);
   });
 });

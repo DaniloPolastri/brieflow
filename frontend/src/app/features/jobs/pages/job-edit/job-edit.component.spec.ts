@@ -3,7 +3,7 @@ import { JobEditComponent } from './job-edit.component';
 import { JobApiService } from '@features/jobs/services/job-api.service';
 import { ClientApiService } from '@features/clients/services/client-api.service';
 import { MemberApiService } from '@features/members/services/member-api.service';
-import { ActivatedRoute, Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -63,10 +63,16 @@ describe('JobEditComponent', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { params: { id: '42' } } },
+          useValue: {
+            snapshot: {
+              params: { id: '42' },
+              paramMap: convertToParamMap({ id: '42', clientId: '1' }),
+            },
+          },
         },
       ],
     });
+    // ensure override applies after provideRouter
     fixture = TestBed.createComponent(JobEditComponent);
     component = fixture.componentInstance;
     const router = TestBed.inject(Router);
@@ -79,7 +85,7 @@ describe('JobEditComponent', () => {
     expect(component.job()).toEqual(mockJob);
   });
 
-  it('should update and navigate to detail on success', () => {
+  it('should update and navigate to detail under client workspace on success', () => {
     component.onFormSubmit({
       title: 'X',
       clientId: 1,
@@ -88,7 +94,7 @@ describe('JobEditComponent', () => {
       briefingData: {},
     });
     expect(jobApi.update).toHaveBeenCalledWith(42, expect.any(Object));
-    expect(navigateSpy).toHaveBeenCalledWith(['/jobs', 42]);
+    expect(navigateSpy).toHaveBeenCalledWith(['/clients', 1, 'jobs', 42]);
   });
 
   it('should show error toast when update fails', () => {

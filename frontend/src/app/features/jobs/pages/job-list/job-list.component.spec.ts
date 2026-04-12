@@ -2,13 +2,12 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { JobListComponent } from './job-list.component';
 import { JobApiService } from '@features/jobs/services/job-api.service';
 import { StorageService } from '@core/services/storage.service';
-import { ClientApiService } from '@features/clients/services/client-api.service';
 import { MemberApiService } from '@features/members/services/member-api.service';
 import { ConfirmationService } from 'primeng/api';
 import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import type { JobListItem } from '@features/jobs/models/job.model';
 
@@ -43,7 +42,6 @@ describe('JobListComponent', () => {
   let fixture: ComponentFixture<JobListComponent>;
   let component: JobListComponent;
   let jobApiSpy: { list: ReturnType<typeof vi.fn>; archive: ReturnType<typeof vi.fn> };
-  let clientApiSpy: { list: ReturnType<typeof vi.fn> };
   let memberApiSpy: { list: ReturnType<typeof vi.fn> };
   let storageSpy: { getUser: ReturnType<typeof vi.fn> };
 
@@ -52,7 +50,6 @@ describe('JobListComponent', () => {
       list: vi.fn().mockReturnValue(of(mockJobs)),
       archive: vi.fn().mockReturnValue(of(mockJobs[0])),
     };
-    clientApiSpy = { list: vi.fn().mockReturnValue(of([])) };
     memberApiSpy = {
       list: vi.fn().mockReturnValue(of({ members: [], pendingInvites: [] })),
     };
@@ -71,13 +68,18 @@ describe('JobListComponent', () => {
       imports: [JobListComponent, NoopAnimationsModule],
       providers: [
         { provide: JobApiService, useValue: jobApiSpy },
-        { provide: ClientApiService, useValue: clientApiSpy },
         { provide: MemberApiService, useValue: memberApiSpy },
         { provide: StorageService, useValue: storageSpy },
         ConfirmationService,
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: convertToParamMap({ clientId: '1' }) },
+          },
+        },
       ],
     });
 
@@ -91,9 +93,9 @@ describe('JobListComponent', () => {
     TestBed.resetTestingModule();
   });
 
-  it('should load jobs on init with archived=false', () => {
+  it('should load jobs on init with archived=false and clientId from route', () => {
     setup();
-    expect(jobApiSpy.list).toHaveBeenCalledWith({ archived: false });
+    expect(jobApiSpy.list).toHaveBeenCalledWith({ archived: false, clientId: 1 });
     expect(component.jobs()).toEqual(mockJobs);
   });
 
@@ -162,7 +164,6 @@ describe('JobListComponent', () => {
       list: vi.fn().mockReturnValue(of([])),
       archive: vi.fn().mockReturnValue(of(mockJobs[0])),
     };
-    clientApiSpy = { list: vi.fn().mockReturnValue(of([])) };
     memberApiSpy = {
       list: vi.fn().mockReturnValue(of({ members: [], pendingInvites: [] })),
     };
@@ -181,13 +182,18 @@ describe('JobListComponent', () => {
       imports: [JobListComponent, NoopAnimationsModule],
       providers: [
         { provide: JobApiService, useValue: jobApiSpy },
-        { provide: ClientApiService, useValue: clientApiSpy },
         { provide: MemberApiService, useValue: memberApiSpy },
         { provide: StorageService, useValue: storageSpy },
         ConfirmationService,
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: convertToParamMap({ clientId: '1' }) },
+          },
+        },
       ],
     });
 
