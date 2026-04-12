@@ -131,10 +131,10 @@ describe('JobListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Novo Job');
   });
 
-  it('should hide "Novo Job" button for CREATIVE', () => {
+  it('should show "Novo Job" button for all roles including CREATIVE', () => {
     setup('CREATIVE');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('Novo Job');
+    expect(fixture.nativeElement.textContent).toContain('Novo Job');
   });
 
   it('should hide action menus for CREATIVE (only view)', () => {

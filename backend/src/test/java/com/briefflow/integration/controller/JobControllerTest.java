@@ -238,7 +238,7 @@ class JobControllerTest {
     }
 
     @Test
-    void should_return403_when_creativeTriesCreate() throws Exception {
+    void should_return201_when_creativeCreatesJob() throws Exception {
         // Create a CREATIVE user directly attached to the existing workspace
         Workspace workspace = workspaceRepository.findById(workspaceId).orElseThrow();
         User creativeUser = new User();
@@ -260,19 +260,20 @@ class JobControllerTest {
         JobRequestDTO request = new JobRequestDTO(
                 clientId,
                 null,
-                "Should be forbidden",
+                "Creative can create",
                 JobType.POST_FEED,
                 JobPriority.NORMAL,
                 null,
-                null,
-                Map.of("captionText", "nope", "format", "1:1")
+                LocalDate.now().plusDays(3),
+                Map.of("captionText", "creative job", "format", "1:1")
         );
 
         mockMvc.perform(post("/api/v1/jobs")
                         .header("Authorization", "Bearer " + creativeToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").exists());
     }
 
     @Test
