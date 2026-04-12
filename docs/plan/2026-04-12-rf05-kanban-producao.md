@@ -20,7 +20,7 @@
 
 - [x] Task B1: DTOs (UpdateJobStatusDTO, JobStatusResponseDTO, JobStatusEvent)
 - [x] Task B2: JobSseService (SSE emitter manager + @Scheduled heartbeat) ⚡ PARALLEL GROUP A
-- [ ] Task B3: @EnableScheduling + SecurityConfig changes ⚡ PARALLEL GROUP A
+- [x] Task B3: @EnableScheduling + SecurityConfig changes ⚡ PARALLEL GROUP A
 - [ ] Task B4: updateJobStatus in JobService/JobServiceImpl (depends on B1)
 - [ ] Task B5: PATCH endpoint in JobController (depends on B4)
 - [ ] Task B6: JobSseController — SSE stream endpoint (depends on B2, B3)
