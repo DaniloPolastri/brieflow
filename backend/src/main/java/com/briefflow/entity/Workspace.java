@@ -25,6 +25,9 @@ public class Workspace {
     @Column(nullable = false, unique = true, length = 150)
     private String slug;
 
+    @Column(name = "job_counter", nullable = false)
+    private Long jobCounter = 0L;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -1,0 +1,209 @@
+<div class="p-6">
+  <!-- Header -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-[22px] font-semibold tracking-tight text-gray-900">Jobs</h1>
+      <p class="mt-1 text-[14px] text-gray-500">
+        Gerencie os jobs da sua agência.
+        <span class="ml-1 text-gray-400">({{ jobs().length }})</span>
+      </p>
+    </div>
+    @if (canManage) {
+      <p-button label="Novo Job" icon="pi pi-plus" (onClick)="goToNew()" />
+    }
+  </div>
+
+  <!-- Filters -->
+  <div class="mb-6 flex flex-col gap-3">
+    <p-iconfield class="flex-1">
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        type="text"
+        pInputText
+        placeholder="Buscar por código ou título..."
+        class="w-full"
+        (input)="onSearchInput($event)"
+      />
+    </p-iconfield>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <p-select
+        [options]="typeOptions"
+        [ngModel]="typeFilter()"
+        (ngModelChange)="typeFilter.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Tipo"
+        [showClear]="true"
+        styleClass="min-w-[160px]"
+        (onChange)="onFilterChange()"
+      />
+      <p-select
+        [options]="priorityOptions"
+        [ngModel]="priorityFilter()"
+        (ngModelChange)="priorityFilter.set($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Prioridade"
+        [showClear]="true"
+        styleClass="min-w-[160px]"
+        (onChange)="onFilterChange()"
+      />
+      @if (canManage) {
+        <p-select
+          [options]="creativeOptions()"
+          [ngModel]="creativeFilter()"
+          (ngModelChange)="creativeFilter.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Criativo"
+          [showClear]="true"
+          styleClass="min-w-[180px]"
+          (onChange)="onFilterChange()"
+        />
+      }
+      <label class="ml-auto flex items-center gap-2 text-[13px] text-gray-600">
+        <p-toggleswitch
+          [ngModel]="showArchived()"
+          (ngModelChange)="showArchived.set($event)"
+          (onChange)="onFilterChange()"
+        />
+        Ver arquivados
+      </label>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading() && jobs().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 text-center">
+      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
+        <i class="pi pi-briefcase text-2xl text-gray-400"></i>
+      </div>
+      <p class="text-[15px] font-medium text-gray-600">Nenhum job cadastrado</p>
+      @if (searchTerm()) {
+        <p class="mt-1 text-[13px] text-gray-400">Tente buscar com outros termos.</p>
+      } @else {
+        <p class="mt-1 text-[13px] text-gray-400">
+          Comece criando o primeiro job da sua agência.
+        </p>
+        @if (canManage) {
+          <p-button
+            label="Novo Job"
+            icon="pi pi-plus"
+            class="mt-4"
+            (onClick)="goToNew()"
+          />
+        }
+      }
+    </div>
+  }
+
+  <!-- Table -->
+  @if (!loading() && jobs().length > 0) {
+    <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+      <p-table
+        [value]="jobs()"
+        [paginator]="true"
+        [rows]="20"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        styleClass="p-datatable-sm"
+        dataKey="id"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="w-[120px]">Código</th>
+            <th>Título</th>
+            <th class="w-[120px]">Tipo</th>
+            <th class="w-[180px]">Criativo</th>
+            <th class="w-[140px]">Prazo</th>
+            <th class="w-[120px]">Prioridade</th>
+            <th class="w-[60px]"></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-job>
+          <tr class="cursor-pointer hover:bg-gray-50" (click)="goToDetail(job)">
+            <td>
+              <span class="font-mono text-[12px] text-gray-700">{{ job.code }}</span>
+            </td>
+            <td>
+              <span class="block max-w-[320px] truncate text-[14px] text-gray-900">
+                {{ job.title }}
+              </span>
+            </td>
+            <td>
+              <p-tag
+                [value]="getTypeLabel(job.type)"
+                severity="secondary"
+                styleClass="text-[11px]"
+              />
+            </td>
+            <td>
+              @if (job.assignedCreativeName) {
+                <div class="flex items-center gap-2">
+                  <div
+                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-medium"
+                    [class]="getAvatarColor(job.assignedCreativeName)"
+                  >
+                    {{ getInitials(job.assignedCreativeName) }}
+                  </div>
+                  <span class="truncate text-[13px] text-gray-700">
+                    {{ job.assignedCreativeName }}
+                  </span>
+                </div>
+              } @else {
+                <span class="text-[13px] text-gray-400">—</span>
+              }
+            </td>
+            <td>
+              <div class="flex items-center gap-1.5">
+                @if (job.isOverdue) {
+                  <i class="pi pi-exclamation-circle text-[12px] text-red-500"></i>
+                }
+                <span
+                  class="text-[13px]"
+                  [class]="job.isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'"
+                >
+                  {{ formatDeadline(job.deadline) }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <p-tag
+                [value]="getPriorityLabel(job.priority)"
+                [severity]="getPrioritySeverity(job.priority)"
+                styleClass="text-[11px]"
+              />
+            </td>
+            <td (click)="$event.stopPropagation()">
+              <p-button
+                data-testid="job-menu-button"
+                icon="pi pi-ellipsis-v"
+                [text]="true"
+                severity="secondary"
+                [rounded]="true"
+                size="small"
+                (onClick)="menu.toggle($event)"
+              />
+              <p-menu
+                #menu
+                [popup]="true"
+                [model]="getMenuItems(job)"
+                appendTo="body"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+
+  <p-confirmDialog />
+</div>

@@ -7,6 +7,7 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -46,6 +47,7 @@ const AVATAR_COLORS = [
     SelectButtonModule,
     MenuModule,
     FormsModule,
+    RouterLink,
     ClientFormDialogComponent,
   ],
   templateUrl: './client-list.component.html',

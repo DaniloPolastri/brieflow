@@ -4,10 +4,13 @@ import com.briefflow.exception.FileStorageException;
 import com.briefflow.service.FileStorageService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,6 +66,24 @@ public class FileStorageServiceImpl implements FileStorageService {
             Files.deleteIfExists(targetFile);
         } catch (IOException e) {
             throw new FileStorageException("Could not delete file: " + relativeUrl, e);
+        }
+    }
+
+    @Override
+    public Resource load(String relativeUrl) {
+        if (relativeUrl == null || relativeUrl.isBlank()) {
+            throw new FileStorageException("Empty file URL");
+        }
+        String relativePath = relativeUrl.replaceFirst("^/uploads/", "");
+        Path targetFile = uploadRoot.resolve(relativePath).normalize();
+        validatePath(targetFile);
+        if (!Files.exists(targetFile)) {
+            throw new FileStorageException("File not found: " + relativeUrl);
+        }
+        try {
+            return new UrlResource(targetFile.toUri());
+        } catch (MalformedURLException e) {
+            throw new FileStorageException("Could not load file: " + relativeUrl, e);
         }
     }
 

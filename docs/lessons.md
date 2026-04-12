@@ -3,6 +3,47 @@
 > Arquivo de auto-melhoria contínua. Cada entrada é uma regra acionável que previne erros repetidos entre sessões.
 > Consultar este arquivo no início de cada sessão de implementação.
 
+## [Plan] — Copiar vocabulário da spec literalmente, não reinterpretar (REINCIDENTE 2x)
+- **Erro:** No plano do RF04, duas violações do mesmo princípio: (1) `JobStatus` foi escrito como `REVISAO/ARCHIVED` em vez de `REVISAO_INTERNA/PUBLICADO` (enum). (2) Nomes de campo backend divergiram da spec em 5+ lugares: `job_number` em vez de `sequence_number`, `due_date` em vez de `deadline`, `assigned_to_id` em vez de `assigned_creative_id`, `file_url/file_name` em vez de `stored_filename/original_filename`, e a coluna `description TEXT` foi esquecida. Pior: o frontend do mesmo plano usava os nomes corretos da spec, criando contrato quebrado entre as duas metades
+- **Regra:** Ao transcrever QUALQUER vocabulário canônico da spec para o plano (enums, nomes de coluna, nomes de campo em DTOs/entities, nomes de constraint, nomes de índice, endpoints REST), copiar **byte-a-byte** da spec. Se precisar renomear, atualizar a spec primeiro e commitar a atualização. Na consolidação do plano via Team Lead, executar um grep cruzado: para cada nome de campo que aparece no backend draft, verificar que o mesmo nome aparece no frontend draft E na spec. Se divergir → parar, resolver, depois commitar o plano
+- **Contexto:** Skill `writing-plans` com agent team (backend-architect + frontend-architect), e a fase de consolidação do Team Lead. Vale para TODO vocabulário fechado da spec — não só enums
+
+## [Plan] — Migrations DEVEM ser validadas contra a spec antes de rodar
+- **Erro:** Task B2 (V8 migration) do RF04 foi copiada do plano sem verificação contra a spec. O plano tinha 5+ nomes de coluna errados. O SQL rodou e commitou antes do code review pegar o problema. Migrations são forward-only — erros em nomes de coluna custam uma V+1 de `ALTER TABLE ... RENAME`
+- **Regra:** Antes de executar qualquer task de migration SQL, o executor DEVE fazer um diff manual entre a seção "Migration" do plano e a seção "Migration" da spec. Nomes de coluna, tipos, constraints, defaults, indexes — comparar item a item. Se divergir, parar, reportar ao usuário, e fixar plano OU spec antes de commitar o SQL
+- **Contexto:** Toda task `V*__*.sql` gerada por um plano
+
+## [Angular] — OnPush + FormGroup input: disparar markForCheck em valueChanges
+- **Erro:** `JobSummarySidebarComponent` recebia `form: FormGroup` via `input.required()` e lia valores com `form().get('title')?.value` em métodos chamados no template. Como a **referência do FormGroup nunca muda**, o signal input nunca emite — e OnPush bloqueia a re-render. Resultado: o Resumo mostrava os valores iniciais permanentemente e "Obrigatórios pendentes" listava campos que já estavam preenchidos, mesmo com o form válido
+- **Regra:** Componentes OnPush que recebem `FormGroup` via `input()` e renderizam valores/estado dele DEVEM se inscrever em `form.valueChanges` (e `statusChanges` se usar validade) e chamar `ChangeDetectorRef.markForCheck()` a cada emissão. Padrão correto com signal input + effect:
+  ```typescript
+  constructor() {
+    effect((onCleanup) => {
+      const f = this.form();
+      const sub = merge(f.valueChanges, f.statusChanges).subscribe(() =>
+        this.cdr.markForCheck(),
+      );
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
+  ```
+  Alternativa: usar `toSignal(form.valueChanges)` + ler o signal nos getters. Nunca confiar que "o template vai re-renderizar sozinho" — OnPush não sabe de mudanças internas de objetos mutáveis
+- **Contexto:** Qualquer componente filho OnPush que receba FormGroup/FormControl/FormArray via input e precise renderizar seus valores ou estado (validade, dirty, touched)
+
+## [PrimeNG] — Nunca passar arrays recém-criados para `[options]` de p-select/p-multiselect/p-dropdown
+- **Erro:** No `BriefingFieldsComponent` do RF04, o template fazia `[options]="selectOptions(field)"` onde `selectOptions()` era um método que chamava `.map(...)` a cada invocação, retornando um NOVO array a cada change detection cycle. Resultado: o `p-select` ficava impossível de selecionar — clicar no dropdown não abria o painel (ou abria e fechava imediatamente) porque o componente PrimeNG reseta seu estado interno toda vez que detecta mudança de identidade em `options`
+- **Regra:** Dropdowns do PrimeNG (p-select, p-multiselect, p-dropdown, p-listbox) DEVEM receber arrays com **referência estável** entre change detection cycles. Usar um de:
+  - `computed()` que cacheia o array mapeado (quando dependente de signal input)
+  - Propriedade `readonly` da classe inicializada no construtor
+  - `BehaviorSubject` + `async` pipe
+  - NUNCA método no template que retorna `.map()` ou `.filter()` direto
+- **Contexto:** Todo uso de dropdown do PrimeNG com lista de options derivada. Adicionar `appendTo="body"` também é boa prática para evitar clipping (já era conhecido por outra lição)
+
+## [Domain] — Soft-delete é coluna booleana dedicada, não valor de enum de status
+- **Erro:** No plano do RF04, `JobStatus.ARCHIVED` foi usado como mecanismo de soft-delete, substituindo a coluna `archived BOOLEAN` que a spec definia. Isso criava duas fontes da verdade e ambiguidade: um job `APROVADO` + `archived=true` ficava inconsistente
+- **Regra:** Soft-delete/archive é SEMPRE uma coluna booleana dedicada (`archived`, `deleted`, `is_active`), NUNCA um valor do enum de status do workflow. Status enums representam etapas do ciclo de vida do negócio; archive é ortogonal — um job pode estar em qualquer status e ser arquivado. Queries filtram por `archived = false` como pré-condição separada
+- **Contexto:** Toda entity com soft-delete + máquina de estados (Job, Client futuro, qualquer entity com ciclo de vida + visibilidade)
+
 ## [Angular] — Sempre invocar frontend-design antes de implementar UI (ERRO REINCIDENTE)
 - **Erro:** Implementei login, register e dashboard pages direto do plano sem invocar a skill `frontend-design`. REINCIDÊNCIA na RF02: implementei 5 telas (register mod, invite dialog, member list, accept invite, settings) via subagentes sem invocar frontend-design para nenhuma delas
 - **Regra:** ANTES de escrever qualquer HTML/template/estilo de componente Angular, invocar `frontend-design`. Sem exceções — mesmo que o plano já tenha o template pronto, mesmo que a task seja delegada a subagente. O subagente NÃO substitui a skill de design. A skill deve ser invocada pelo orquestrador ANTES de despachar o subagente implementador
@@ -101,3 +142,23 @@
 - **Erro:** `AssignMembersRequestDTO` aceitava `List<Long>` sem `@NotNull` nos elementos. Lista `[null, 5, null]` passava validação e causava NPE no service
 - **Regra:** Em DTOs com listas, SEMPRE anotar os elementos: `List<@NotNull Long>`. Isso rejeita null na camada de validação
 - **Contexto:** Todos os DTOs de request que recebem listas de IDs ou valores
+
+## [JPA] — `@Modifying` é incompatível com `RETURNING` nativo (retornos não-void)
+- **Erro:** `JobRepository.incrementAndGetJobCounter` estava anotado com `@Modifying` E retornava `Long` via native query `UPDATE ... RETURNING`. Spring Data JPA rejeita em runtime: "Modifying queries can only use void or int/Integer as return type". O método nunca foi exercitado em integration test até B11 — os unit tests mockavam a chamada, então o bug passou por code review sem ser detectado. Em produção, qualquer criação de job quebraria com `InvalidDataAccessApiUsageException`
+- **Regra:** Quando uma query nativa PostgreSQL usa `UPDATE ... RETURNING` (ou `INSERT ... RETURNING`, `DELETE ... RETURNING`) e retorna um valor para o chamador, NÃO colocar `@Modifying`. Spring Data trata a query como SELECT (porque tem result set) e o ORM executa corretamente dentro da transação ativa. `@Modifying` só serve quando o método retorna `void`, `int` ou `Integer` (rowcount)
+- **Contexto:** Qualquer repository method que usa `RETURNING` em query nativa. Adicionalmente: toda query repository method que não é trivialmente mockável (queries nativas com SQL específico do Postgres) PRECISA de um integration test com Testcontainers — unit tests com mock ocultam bugs desse tipo
+
+## [API] — Contrato DTO deve ser verificado ponta-a-ponta, não só dentro de cada camada
+- **Erro:** No RF04, 2 contratos quebraram entre backend e frontend: (1) `JobResponseDTO.createdBy` virou objeto `MemberSummary` no backend mas frontend esperava `createdByName: string`. (2) `JobListItemDTO` ficou nested no backend (`client`/`assignedCreative`/`overdue`) mas spec e frontend são flat (`clientName`/`assignedCreativeName`/`isOverdue`). Tests passaram porque cada camada mocou sua própria versão. A runtime, a UI quebra com `undefined.name`
+- **Regra:** Ao final de task backend que expõe DTOs consumidos pelo frontend, executar grep cruzado: cada campo do Java DTO response deve aparecer com mesmo nome no TypeScript model E no HTML que renderiza. `JobControllerTest` DEVE ter `jsonPath` assert em pelo menos 1 campo textual do DTO (não só count/status) para congelar o contrato
+- **Contexto:** Todo par (BackendResponseDTO + FrontendModel). Especialmente crítico para Response DTOs lidos por listas e detalhes
+
+## [API] — Query params declarados na spec DEVEM ter teste de integração
+- **Erro:** No RF04, `archived` e `search` foram listados na spec como query params da listagem e consumidos pelo frontend, mas o backend nunca os declarou/aplicou. O toggle "Ver arquivados" e o search input são dead UI. Nenhum teste pegou porque os testes só enviavam params que o controller esperava
+- **Regra:** Para CADA query param documentado na spec, o controller integration test DEVE ter um teste que (a) envia o param com valor não-default, (b) afirma que o resultado reflete esse filtro. Sem esse teste, o param não existe de verdade. Na code review, checar: "o teste de listagem passa TODOS os query params da spec?"
+- **Contexto:** Endpoints REST com query params opcionais — especialmente filtros de listagem
+
+## [Plan] — Validators polimórficos (strategy) precisam de happy-path test para CADA variante
+- **Erro:** `CarrosselBriefingValidator` exigia um campo `caption` inventado que não existe na spec nem no frontend. `BriefingValidatorTest` testou o campo obrigatório `slideCount` mas nunca enviou o payload mínimo puro (`{slideCount: 5}`) — então o caption extra passou despercebido. `JobControllerTest` nunca criou um job CARROSSEL. Resultado: primeira vez que um usuário escolhe Carrossel, recebe 422 sem ter como corrigir
+- **Regra:** Quando há N variantes com schemas distintos (validator por tipo, status por entity, parser por formato), CADA variante DEVE ter: (a) happy-path unit test que envia APENAS os campos obrigatórios da spec, (b) pelo menos 1 integration test end-to-end. Não é aceitável cobrir só 1 variante como smoke test das outras N-1
+- **Contexto:** Strategy pattern com N implementações, enum-driven validation, schemas polimórficos

@@ -1,0 +1,130 @@
+<form [formGroup]="form" class="flex flex-col gap-6" (ngSubmit)="onSubmit()">
+  <!-- Card 1: Informações gerais -->
+  <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
+    <h3 class="mb-4 text-[16px] font-semibold text-gray-900">
+      Informações gerais
+    </h3>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div class="flex flex-col gap-1.5 md:col-span-2">
+        <label for="title" class="text-[13px] font-medium text-gray-700">
+          Título <span class="ml-0.5 text-red-500">*</span>
+        </label>
+        <input
+          id="title"
+          pInputText
+          formControlName="title"
+          placeholder="Ex: Post de lançamento da coleção"
+          class="w-full"
+        />
+        @if (form.get('title')?.invalid && form.get('title')?.touched) {
+          <span class="text-[12px] text-red-600">Título é obrigatório.</span>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="type" class="text-[13px] font-medium text-gray-700">
+          Tipo <span class="ml-0.5 text-red-500">*</span>
+        </label>
+        <p-select
+          inputId="type"
+          formControlName="type"
+          [options]="typeOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="deadline" class="text-[13px] font-medium text-gray-700">
+          Prazo
+        </label>
+        <p-datepicker
+          inputId="deadline"
+          formControlName="deadline"
+          dateFormat="dd/mm/yy"
+          placeholder="dd/mm/aaaa"
+          [showIcon]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="priority" class="text-[13px] font-medium text-gray-700">
+          Prioridade <span class="ml-0.5 text-red-500">*</span>
+        </label>
+        <p-select
+          inputId="priority"
+          formControlName="priority"
+          [options]="priorityOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5 md:col-span-2">
+        <label
+          for="assignedCreativeId"
+          class="text-[13px] font-medium text-gray-700"
+        >
+          Criativo atribuído
+        </label>
+        <p-select
+          inputId="assignedCreativeId"
+          formControlName="assignedCreativeId"
+          [options]="creativeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecione um criativo (opcional)"
+          [showClear]="true"
+          [filter]="true"
+          styleClass="w-full"
+        />
+        @if (creativeOptions().length === 0) {
+          <span class="text-[12px] text-gray-400">
+            Nenhum criativo atribuído a este cliente.
+          </span>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1.5 md:col-span-2">
+        <label for="description" class="text-[13px] font-medium text-gray-700">
+          Descrição
+        </label>
+        <textarea
+          id="description"
+          pTextarea
+          formControlName="description"
+          rows="3"
+          placeholder="Descrição adicional do job"
+          class="w-full"
+        ></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- Card 2: Briefing -->
+  <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
+    <h3 class="mb-4 text-[16px] font-semibold text-gray-900">
+      Briefing — {{ getTypeLabel() }}
+    </h3>
+    <app-briefing-fields
+      [type]="currentType()"
+      [formGroup]="getBriefingGroup()"
+    />
+  </section>
+
+  <!-- Card 3: Anexos -->
+  <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
+    <h3 class="mb-4 text-[16px] font-semibold text-gray-900">Anexos do briefing</h3>
+    <app-job-file-uploader
+      [mode]="getUploaderMode()"
+      [jobId]="jobId()"
+      [existingFiles]="existingFiles()"
+      (filesStaged)="onFilesStaged($event)"
+      (fileUploaded)="onFileUploaded($event)"
+      (fileDeleted)="onFileDeleted($event)"
+    />
+  </section>
+</form>

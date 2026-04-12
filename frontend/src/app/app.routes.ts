@@ -16,6 +16,21 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'clients/:clientId',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import(
+        './features/clients/layouts/client-workspace-layout/client-workspace-layout.component'
+      ).then((m) => m.ClientWorkspaceLayoutComponent),
+    children: [
+      { path: '', redirectTo: 'jobs', pathMatch: 'full' },
+      {
+        path: 'jobs',
+        loadChildren: () => import('./features/jobs/jobs.routes'),
+      },
+    ],
+  },
+  {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],

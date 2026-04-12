@@ -1,0 +1,142 @@
+<div class="flex flex-col gap-3">
+  @if (canManage()) {
+    <!-- Dropzone -->
+    <label
+      class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors"
+      [class]="isDragging()
+        ? 'border-indigo-400 bg-indigo-50/60'
+        : 'border-indigo-200 bg-gray-50/40 hover:border-indigo-300 hover:bg-indigo-50/30'"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+        <i class="pi pi-cloud-upload text-[18px]"></i>
+      </div>
+      <p class="text-[13px] font-medium text-gray-700">
+        Arraste arquivos ou clique para selecionar
+      </p>
+      <p class="text-[11px] text-gray-400">
+        Imagens, PDFs, vídeos — até 50MB por arquivo
+      </p>
+      <input
+        type="file"
+        class="hidden"
+        multiple
+        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,video/mp4,video/quicktime"
+        (change)="onFileSelect($event)"
+      />
+    </label>
+  }
+
+  <!-- Errors -->
+  @if (errors().length > 0) {
+    <div class="rounded-md border border-red-200 bg-red-50 px-3 py-2">
+      @for (err of errors(); track err) {
+        <p class="text-[12px] text-red-700">{{ err }}</p>
+      }
+    </div>
+  }
+
+  <!-- Existing files (direct mode / detail view) -->
+  @if (existingFiles().length > 0) {
+    <div class="flex flex-col gap-2">
+      @for (file of existingFiles(); track file.id) {
+        <div class="flex items-center gap-3 rounded-md border border-gray-200 bg-white p-3">
+          <i [class]="getFileIcon(file.mimeType) + ' text-[16px] text-gray-500'"></i>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[13px] font-medium text-gray-800">
+              {{ file.originalFilename }}
+            </p>
+            <p class="text-[11px] text-gray-400">{{ formatSize(file.sizeBytes) }}</p>
+          </div>
+          <a
+            [href]="downloadUrl(file.id)"
+            target="_blank"
+            rel="noopener"
+            class="text-[12px] text-indigo-600 hover:underline"
+          >
+            Baixar
+          </a>
+          @if (canManage()) {
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              [rounded]="true"
+              size="small"
+              (onClick)="removeExistingFile(file)"
+            />
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Pending / uploading files -->
+  @if (pendingFiles().length > 0) {
+    <div class="flex flex-col gap-2">
+      @for (pf of pendingFiles(); track pf.file.name + $index) {
+        <div class="flex items-center gap-3 rounded-md border border-gray-200 bg-white p-3">
+          <i [class]="getFileIcon(pf.file.type) + ' text-[16px] text-gray-500'"></i>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[13px] font-medium text-gray-800">
+              {{ pf.file.name }}
+            </p>
+            <p class="text-[11px] text-gray-400">{{ formatSize(pf.file.size) }}</p>
+            @if (pf.status === 'uploading') {
+              <p-progressbar
+                [value]="pf.progress"
+                [showValue]="false"
+                styleClass="mt-1 h-1"
+              />
+            }
+            @if (pf.status === 'error' && pf.errorMessage) {
+              <p class="mt-1 text-[11px] text-red-600">{{ pf.errorMessage }}</p>
+            }
+          </div>
+          @switch (pf.status) {
+            @case ('pending') {
+              <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                Pendente
+              </span>
+            }
+            @case ('uploading') {
+              <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                Enviando…
+              </span>
+            }
+            @case ('done') {
+              <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                Enviado
+              </span>
+            }
+            @case ('error') {
+              <span class="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                Falha
+              </span>
+            }
+          }
+          @if (pf.status === 'error') {
+            <p-button
+              icon="pi pi-refresh"
+              [text]="true"
+              severity="secondary"
+              [rounded]="true"
+              size="small"
+              (onClick)="retry(pf)"
+            />
+          }
+          <p-button
+            icon="pi pi-times"
+            [text]="true"
+            severity="secondary"
+            [rounded]="true"
+            size="small"
+            (onClick)="removePending(pf)"
+          />
+        </div>
+      }
+    </div>
+  }
+</div>
