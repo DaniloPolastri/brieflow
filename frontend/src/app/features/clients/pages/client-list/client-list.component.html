@@ -66,7 +66,10 @@
   @if (!loading() && clients().length > 0) {
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       @for (client of clients(); track client.id) {
-        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-xs hover:shadow-sm transition-shadow">
+        <a
+          [routerLink]="['/clients', client.id]"
+          class="block rounded-lg border border-gray-200 bg-white p-4 shadow-xs hover:shadow-sm transition-shadow cursor-pointer text-inherit no-underline"
+        >
           <div class="flex items-start gap-3">
             <!-- Avatar -->
             @if (client.logoUrl) {
@@ -100,17 +103,18 @@
             </div>
             <!-- Menu button -->
             @if (canManage) {
-              <p-button
-                data-testid="client-menu-button"
-                icon="pi pi-ellipsis-v"
-                [text]="true"
-                severity="secondary"
-                [rounded]="true"
-                size="small"
-                class="shrink-0"
-                (onClick)="menu.toggle($event)"
-              />
-              <p-menu #menu [popup]="true" [model]="getMenuItems(client)" />
+              <div class="shrink-0" (click)="$event.preventDefault(); $event.stopPropagation()">
+                <p-button
+                  data-testid="client-menu-button"
+                  icon="pi pi-ellipsis-v"
+                  [text]="true"
+                  severity="secondary"
+                  [rounded]="true"
+                  size="small"
+                  (onClick)="menu.toggle($event)"
+                />
+                <p-menu #menu [popup]="true" [model]="getMenuItems(client)" />
+              </div>
             }
           </div>
 
@@ -129,7 +133,7 @@
               </div>
             }
           </div>
-        </div>
+        </a>
       }
     </div>
   }

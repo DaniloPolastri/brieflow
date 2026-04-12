@@ -8,6 +8,7 @@ import { Client } from '@features/clients/models/client.model';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
 const mockClients: Client[] = [
   {
@@ -66,6 +67,7 @@ describe('ClientListComponent', () => {
         ConfirmationService,
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
       ],
     });
 
@@ -160,6 +162,7 @@ describe('ClientListComponent', () => {
         ConfirmationService,
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
       ],
     });
 
