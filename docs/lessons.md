@@ -13,6 +13,23 @@
 - **Regra:** Antes de executar qualquer task de migration SQL, o executor DEVE fazer um diff manual entre a seção "Migration" do plano e a seção "Migration" da spec. Nomes de coluna, tipos, constraints, defaults, indexes — comparar item a item. Se divergir, parar, reportar ao usuário, e fixar plano OU spec antes de commitar o SQL
 - **Contexto:** Toda task `V*__*.sql` gerada por um plano
 
+## [Angular] — OnPush + FormGroup input: disparar markForCheck em valueChanges
+- **Erro:** `JobSummarySidebarComponent` recebia `form: FormGroup` via `input.required()` e lia valores com `form().get('title')?.value` em métodos chamados no template. Como a **referência do FormGroup nunca muda**, o signal input nunca emite — e OnPush bloqueia a re-render. Resultado: o Resumo mostrava os valores iniciais permanentemente e "Obrigatórios pendentes" listava campos que já estavam preenchidos, mesmo com o form válido
+- **Regra:** Componentes OnPush que recebem `FormGroup` via `input()` e renderizam valores/estado dele DEVEM se inscrever em `form.valueChanges` (e `statusChanges` se usar validade) e chamar `ChangeDetectorRef.markForCheck()` a cada emissão. Padrão correto com signal input + effect:
+  ```typescript
+  constructor() {
+    effect((onCleanup) => {
+      const f = this.form();
+      const sub = merge(f.valueChanges, f.statusChanges).subscribe(() =>
+        this.cdr.markForCheck(),
+      );
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
+  ```
+  Alternativa: usar `toSignal(form.valueChanges)` + ler o signal nos getters. Nunca confiar que "o template vai re-renderizar sozinho" — OnPush não sabe de mudanças internas de objetos mutáveis
+- **Contexto:** Qualquer componente filho OnPush que receba FormGroup/FormControl/FormArray via input e precise renderizar seus valores ou estado (validade, dirty, touched)
+
 ## [PrimeNG] — Nunca passar arrays recém-criados para `[options]` de p-select/p-multiselect/p-dropdown
 - **Erro:** No `BriefingFieldsComponent` do RF04, o template fazia `[options]="selectOptions(field)"` onde `selectOptions()` era um método que chamava `.map(...)` a cada invocação, retornando um NOVO array a cada change detection cycle. Resultado: o `p-select` ficava impossível de selecionar — clicar no dropdown não abria o painel (ou abria e fechava imediatamente) porque o componente PrimeNG reseta seu estado interno toda vez que detecta mudança de identidade em `options`
 - **Regra:** Dropdowns do PrimeNG (p-select, p-multiselect, p-dropdown, p-listbox) DEVEM receber arrays com **referência estável** entre change detection cycles. Usar um de:
